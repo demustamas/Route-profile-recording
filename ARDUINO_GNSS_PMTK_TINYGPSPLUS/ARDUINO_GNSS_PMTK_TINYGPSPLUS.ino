@@ -159,7 +159,6 @@ void loop() {
 }
 
 void setupGNSS () {
-  char c;
   Serial.println(F("Setting up GNSS receiver"));
   gpsPort.begin(9600);
   gpsPort.print(PMTK_SET_BAUD_38400);
