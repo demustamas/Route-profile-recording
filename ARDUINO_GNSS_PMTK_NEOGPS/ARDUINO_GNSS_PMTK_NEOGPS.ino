@@ -117,7 +117,6 @@ class dataStructure
 } dataSet;
 
 void setupGNSS();
-void sendMSG(const char*);
 void setupSDCard();
 void incFileNum ();
 

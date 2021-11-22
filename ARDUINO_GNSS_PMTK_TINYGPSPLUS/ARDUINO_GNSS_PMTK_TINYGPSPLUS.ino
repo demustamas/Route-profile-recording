@@ -4,12 +4,15 @@
 #include <TinyGPSPlus.h>
 
 #define PMTK_RESET "$PMTK104*37"
+#define PMTK_WARM_START "$PMTK102*31"
 #define PMTK_SET_BAUD_38400 "$PMTK251,38400*27"
 #define PMTK_SET_BAUD_57600 "$PMTK251,57600*2C"
+#define PMTK_SET_BAUD_115200 "$PMTK251,115200*1F"
 #define PMTK_SET_NMEA_UPDATE_1HZ "$PMTK220,1000*1F"
 #define PMTK_SET_NMEA_UPDATE_5HZ "$PMTK220,200*2C"
 #define PMTK_SET_NMEA_UPDATE_10HZ "$PMTK220,100*2F"
 #define PMTK_API_SET_FIX_CTL_5HZ "$PMTK300,200,0,0,0,0*2F"
+#define PMTK_API_SET_FIX_CTL_10HZ "$PMTK300,100,0,0,0,0*2C"
 #define PMTK_SET_NMEA_OUTPUT_GLLONLY "$PMTK314,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29"
 #define PMTK_SET_NMEA_OUTPUT_RMCGGA "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
 #define PMTK_SET_NMEA_OUTPUT_RMCGGAGSA "$PMTK314,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29"
@@ -33,7 +36,7 @@ class dataSet
     String names[14] = {"Year", "Month", "Day", "Hour", "Minute", "Second",
                         "nSAT",
                         "Lon", "Lat", "Alt",
-                        "Speed", "hDOP", "vDOP", "pDOP"
+                        "Speed", "hDOP"
                        };
 
     long year = 1996;
@@ -48,8 +51,6 @@ class dataSet
     double alt = 0;
     double gSpeed = 0;
     int hdop = 0;
-    int vdop = 0;
-    int pdop = 0;
 
     void printItems() {
       String data = "";
@@ -76,10 +77,6 @@ class dataSet
       data += String(gSpeed, 2);
       data += "\t";
       data += hdop;
-      data += "\t";
-      data += vdop;
-      data += "\t";
-      data += pdop;
       Serial.println(data);
     }
 
@@ -108,10 +105,6 @@ class dataSet
       data += String(gSpeed, 2);
       data += ',';
       data += hdop;
-      data += ',';
-      data += vdop;
-      data += ',';
-      data += pdop;
       sdFile.println(data);
       sdFile.flush();
     }
@@ -139,8 +132,8 @@ void setup() {
 
 void loop() {
   while (gpsPort.available() > 0)
-  gps.encode(gpsPort.read());
-  if (gps.location.isUpdated()){
+    gps.encode(gpsPort.read());
+  if (gps.location.isUpdated()) {
     fix.year = gps.date.year();
     fix.month = gps.date.month();
     fix.day = gps.date.day();
@@ -161,16 +154,55 @@ void loop() {
 void setupGNSS () {
   Serial.println(F("Setting up GNSS receiver"));
   gpsPort.begin(9600);
-  gpsPort.print(PMTK_SET_BAUD_38400);
+  sendMSG(PMTK_SET_BAUD_38400);
   gpsPort.begin(38400);
-  gpsPort.println(PMTK_SET_NMEA_OUTPUT_RMCGGAGSA);
-  gpsPort.println(PMTK_SET_NMEA_UPDATE_10HZ);
+  delay(5000);
+  //sendMSG(PMTK_SET_NMEA_OUTPUT_OFF);
+  sendMSG(PMTK_SET_NMEA_UPDATE_10HZ);
+  sendMSG(PMTK_API_SET_FIX_CTL_10HZ);
+  sendMSG(PMTK_SET_NMEA_OUTPUT_RMCGGAGSA);
+}
+
+void sendMSG(const char* msg) {
+  bool replyFound = false;
+  Serial.print(F("\tSending message: "));
+  Serial.println(msg);
+  gpsPort.println(msg);
+  Serial.print(F("\tFetching reply: "));
+  delay(1000);
+  while (gpsPort.available() > 0) {
+    char rc = gpsPort.read();
+    switch (rc) {
+      case '$':
+        rc = gpsPort.read();
+        if (rc == 'P') {
+          Serial.print(F("$P"));
+          replyFound = true;
+        }
+        break;
+      case '*':
+        if (replyFound) {
+          Serial.print(F("*"));
+          for (byte i = 0; i < 2; i++) {
+            rc = gpsPort.read();
+            Serial.print(rc);
+          }
+        }
+        replyFound = false;
+        break;
+      default:
+        if (replyFound) {
+          Serial.print(rc);
+        }
+    }
+  }
+  Serial.println();
 }
 
 void setupSDCard() {
   Serial.println(F("Setting up SD card"));
   if (!SD.begin(10)) {
-    Serial.println(F("SD card setup failed!"));
+    Serial.println(F("\tSD card setup failed!"));
   }
   else {
     incFileNum();
@@ -178,12 +210,11 @@ void setupSDCard() {
       incFileNum();
     }
     sdFile = SD.open(fileName, FILE_WRITE);
-    Serial.println(fileName);
     if (!sdFile) {
-      Serial.println(F("File open error!"));
+      Serial.println(F("\tFile open error!"));
     }
     else {
-      Serial.print(F("File opened successfully: "));
+      Serial.print(F("\tFile opened successfully: "));
       Serial.println(sdFile.name());
       for (byte i = 0; i < sizeof(fix.names) / sizeof(fix.names[0]); i++) {
         sdFile.print(fix.names[i]);
