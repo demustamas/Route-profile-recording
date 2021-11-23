@@ -31,16 +31,9 @@ from decorators import time_it, time_its
 import sys
 import os
 
-
 """TODOs"""
-# Pontosság összehasonlító jellemzése: xDOP, nSAT, átlagszámítás, szórás
-# Magasságadatok letöltése központi adattárból
-# Átlagszámítási mintaszámok felülvizsgálata
-# Azonos mintavételi pont beépítése v. átlag súlyozása az összmintavételi pontok alapján
-# Egyes realizációk értékelése átlagtól való eltérésük alapján
-# low pass filter a gyorsuláshoz
-# 0-idejű időtartamokat kiiktatni az egyes realizációkból
-# treshold feletti sebességváltozás esetén megjelenő gyorsulások eloszlása, hisztogramja
+# static diagram
+# dynamic diagram
 
 """Simulation input parameters"""
 
@@ -82,7 +75,6 @@ def main():
         graph_map,
         graph_GNSS_data,
         graph_GNSS_sum_data,
-        showMap=True,
     )
 
     [print(x) for x in time_its]
@@ -609,7 +601,6 @@ class Realizations:
         gmap,
         gGNSS,
         gGNSSsum,
-        showMap=True,
         conditionedData=True,
     ):
         """Create graphs for visualizing GNSS data."""
@@ -628,33 +619,77 @@ class Realizations:
 
         legendlabel = ["iPhone 11 Pro", "Gadget 1", "Gadget 2"]
 
+        latitude, longitude, length = 0, 0, 0
+        for track_idx, track in enumerate(self.condRealizations):
+            latitude += np.sum(track.lat)
+            longitude += np.sum(track.lon)
+            length += len(track)
+        latitude /= length
+        longitude /= length
+
+        """Static graph."""
+        for each_idx, each in enumerate(self.rawRealizations):
+            """A fokban megadott átlagértékhez képest kell a távolságokat kiszámolni a HAVERSINE formulával"""
+            mean_x = each.lat.mean()
+            mean_y = each.lon.mean()
+            mean_z = each.alt.mean()
+            std_x = each.lat.std()
+            std_y = each.lon.std()
+            std_z = each.alt.std()
+            R_2D_2DRMS = 2 * np.sqrt(std_x ** 2 + std_y ** 2)
+            R_3D_99 = 1.122 * (std_x + std_y + std_z)
+            circle = pyplot.Circle(
+                (mean_x, mean_y), radius=R_2D_2DRMS, color="red", fill=False
+            )
+            fig, ax = pyplot.subplots(
+                1, 2, dpi=400, figsize=(16, 9), gridspec_kw={"width_ratios": [4, 1]}
+            )
+            ax[0].scatter(each.lat, each.lon, c="blue", s=1, marker=".")
+            ax[0].add_patch(circle)
+            lim1 = np.amax(each.lat) - np.amin(each.lat)
+            lim2 = np.amax(each.lon) - np.amin(each.lon)
+            lim = np.amax([lim1, lim2]) / 2
+            ax[0].set_xlim(mean_x - lim, mean_x + lim)
+            ax[0].set_ylim(mean_y - lim, mean_y + lim)
+            ax[0].spines["left"].set_position("center")
+            ax[0].spines["bottom"].set_position("center")
+            ax[0].spines["right"].set_color("none")
+            ax[0].spines["top"].set_color("none")
+            ax[0].set_xlabel("Latitude", loc="left")
+            ax[0].set_ylabel("Longitude", loc="bottom")
+            ax[1].violinplot(each.alt, showextrema=False)
+            ax[1].hlines(y=mean_z, xmin=0.9, xmax=1.1, color="blue")
+            ax[1].hlines(y=mean_z + R_2D_2DRMS, xmin=0.8, xmax=1.2, color="red")
+            ax[1].hlines(y=mean_z - R_2D_2DRMS, xmin=0.8, xmax=1.2, color="red")
+            ax[1].vlines(
+                x=1, ymin=mean_z - R_2D_2DRMS, ymax=mean_z + R_2D_2DRMS, color="red"
+            )
+            lim = (np.amax(each.alt) - np.amin(each.alt)) / 2
+            ax[1].set_ylim(mean_z - lim, mean_z + lim)
+            ax[1].xaxis.set_visible(False)
+            ax[1].set_ylabel("Altitude [m]")
+            pyplot.savefig(
+                os.path.join(graph_dir, "raw_static_" + str(each_idx) + ".png"), dpi=400
+            )
+
         """Plot single rides on map."""
-        if showMap:
-            latitude, longitude, length = 0, 0, 0
-            for track_idx, track in enumerate(self.condRealizations):
-                latitude += np.sum(track.lat)
-                longitude += np.sum(track.lon)
-                length += len(track)
-            latitude /= length
-            longitude /= length
+        myMap = folium.Map(location=[latitude, longitude], tiles="CartoDB positron")
+        for track_idx, track in enumerate(self.rawRealizations):
+            points = list(zip(track.lat, track.lon))
+            folium.PolyLine(
+                points, color=linecolor[track_idx], weight=2.5, opacity=1
+            ).add_to(myMap)
+        myMap.save(os.path.join(graph_dir, "map_raw.html"))
 
-            myMap = folium.Map(location=[latitude, longitude], tiles="CartoDB positron")
-            for track_idx, track in enumerate(self.rawRealizations):
-                points = list(zip(track.lat, track.lon))
-                folium.PolyLine(
-                    points, color=linecolor[track_idx], weight=2.5, opacity=1
-                ).add_to(myMap)
-            myMap.save(os.path.join(graph_dir, "map_raw.html"))
+        myMap = folium.Map(location=[latitude, longitude], tiles="CartoDB positron")
+        for track_idx, track in enumerate(self.condRealizations):
+            points = list(zip(track.lat, track.lon))
+            folium.PolyLine(
+                points, color=linecolor[track_idx], weight=2.5, opacity=1
+            ).add_to(myMap)
+        myMap.save(os.path.join(graph_dir, "map_cond.html"))
 
-            myMap = folium.Map(location=[latitude, longitude], tiles="CartoDB positron")
-            for track_idx, track in enumerate(self.condRealizations):
-                points = list(zip(track.lat, track.lon))
-                folium.PolyLine(
-                    points, color=linecolor[track_idx], weight=2.5, opacity=1
-                ).add_to(myMap)
-            myMap.save(os.path.join(graph_dir, "map_cond.html"))
-
-            print("Track map plotted.")
+        print("Track map plotted.")
 
         """Plot altitude."""
         fig = plt.figure(plot_width=700, plot_height=400)
@@ -843,6 +878,4 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
-"""EOF"""
-"""EOF"""
 """EOF"""
