@@ -249,7 +249,7 @@ class Realizations:
                 self.rawRealizations[-1].lon = df.Lon
                 self.rawRealizations[-1].lat = df.Lat
                 self.rawRealizations[-1].alt = df.Alt
-                self.rawRealizations[-1].hdop = df.HDOP / 100
+                self.rawRealizations[-1].hdop = df.hDOP / 100
                 self.rawRealizations[-1].vdop = 0.0
                 self.rawRealizations[-1].pdop = 0.0
                 self.rawRealizations[-1].hAcc = 0.0
@@ -629,48 +629,172 @@ class Realizations:
 
         """Static graph."""
         for each_idx, each in enumerate(self.rawRealizations):
-            """A fokban megadott átlagértékhez képest kell a távolságokat kiszámolni a HAVERSINE formulával"""
             mean_x = each.lat.mean()
             mean_y = each.lon.mean()
             mean_z = each.alt.mean()
-            std_x = each.lat.std()
-            std_y = each.lon.std()
-            std_z = each.alt.std()
+            dist_x = np.zeros(each.lat.size)
+            dist_y = np.zeros(each.lon.size)
+            dist_z = each.alt - mean_z
+            for i in each.lat.index:
+                dist_x[i] = gdist(
+                    [each.lat.iloc[i], each.lon.iloc[i]],
+                    [mean_x, each.lon.iloc[i]],
+                ).m
+                dist_y[i] = gdist(
+                    [each.lat.iloc[i], each.lon.iloc[i]],
+                    [each.lat.iloc[i], mean_y],
+                ).m
+                if each.lat.iloc[i] < mean_x:
+                    dist_x[i] *= -1
+                if each.lon.iloc[i] < mean_y:
+                    dist_y[i] *= -1
+            mean_x = dist_x.mean()
+            mean_y = dist_y.mean()
+            mean_z = dist_z.mean()
+            std_x = dist_x.std()
+            std_y = dist_y.std()
+            std_z = dist_z.std()
             R_2D_2DRMS = 2 * np.sqrt(std_x ** 2 + std_y ** 2)
-            R_3D_99 = 1.122 * (std_x + std_y + std_z)
-            circle = pyplot.Circle(
-                (mean_x, mean_y), radius=R_2D_2DRMS, color="red", fill=False
-            )
+            R_3D_2DRMS = 2 * np.sqrt(std_x ** 2 + std_y ** 2 + std_z ** 2)
             fig, ax = pyplot.subplots(
-                1, 2, dpi=400, figsize=(16, 9), gridspec_kw={"width_ratios": [4, 1]}
+                1,
+                2,
+                dpi=400,
+                figsize=(16, 9),
+                gridspec_kw={"width_ratios": [5, 1]},
+                sharey=True,
             )
-            ax[0].scatter(each.lat, each.lon, c="blue", s=1, marker=".")
-            ax[0].add_patch(circle)
-            lim1 = np.amax(each.lat) - np.amin(each.lat)
-            lim2 = np.amax(each.lon) - np.amin(each.lon)
-            lim = np.amax([lim1, lim2]) / 2
-            ax[0].set_xlim(mean_x - lim, mean_x + lim)
-            ax[0].set_ylim(mean_y - lim, mean_y + lim)
-            ax[0].spines["left"].set_position("center")
-            ax[0].spines["bottom"].set_position("center")
-            ax[0].spines["right"].set_color("none")
-            ax[0].spines["top"].set_color("none")
-            ax[0].set_xlabel("Latitude", loc="left")
-            ax[0].set_ylabel("Longitude", loc="bottom")
-            ax[1].violinplot(each.alt, showextrema=False)
-            ax[1].hlines(y=mean_z, xmin=0.9, xmax=1.1, color="blue")
-            ax[1].hlines(y=mean_z + R_2D_2DRMS, xmin=0.8, xmax=1.2, color="red")
-            ax[1].hlines(y=mean_z - R_2D_2DRMS, xmin=0.8, xmax=1.2, color="red")
-            ax[1].vlines(
-                x=1, ymin=mean_z - R_2D_2DRMS, ymax=mean_z + R_2D_2DRMS, color="red"
+            ax[0].scatter(
+                dist_x,
+                dist_y,
+                c="blue",
+                s=1,
+                marker=".",
+                label="Recorded positions",
             )
-            lim = (np.amax(each.alt) - np.amin(each.alt)) / 2
-            ax[1].set_ylim(mean_z - lim, mean_z + lim)
-            ax[1].xaxis.set_visible(False)
-            ax[1].set_ylabel("Altitude [m]")
+            circle_2D = pyplot.Circle(
+                (mean_x, mean_y),
+                radius=R_2D_2DRMS,
+                color="red",
+                fill=False,
+                label="2DRMS (2D): " + "{0:1.2f}".format(R_2D_2DRMS) + " m",
+            )
+            circle_3D = pyplot.Circle(
+                (mean_x, mean_y),
+                radius=R_3D_2DRMS,
+                color="green",
+                fill=False,
+                label="2DRMS (3D): " + "{0:1.2f}".format(R_3D_2DRMS) + " m",
+            )
+            ax[0].add_patch(circle_2D)
+            ax[0].add_patch(circle_3D)
+            ax[0].set(
+                xlabel="Longitudinal distance [m]",
+                ylabel="Lateral distance [m]",
+                aspect="equal",
+                adjustable="datalim",
+            )
+            ax[0].legend()
+            ax[1].scatter(
+                each.index,
+                dist_z,
+                c="blue",
+                s=1,
+                marker=".",
+                label="Recorded altitude",
+            )
+            ax[1].axhline(R_3D_2DRMS, color="green")
+            ax[1].axhline(-R_3D_2DRMS, color="green")
+            ax[1].set(ylabel="Vertical distance [m]", xticks=[])
+            ax[1].yaxis.set_tick_params(labelleft=True)
             pyplot.savefig(
-                os.path.join(graph_dir, "raw_static_" + str(each_idx) + ".png"), dpi=400
+                os.path.join(graph_dir, "raw_static_" + str(each_idx) + ".png"),
+                dpi=400,
             )
+        for each_idx, each in enumerate(self.condRealizations):
+            mean_x = each.lat.mean()
+            mean_y = each.lon.mean()
+            mean_z = each.alt.mean()
+            dist_x = np.zeros(each.lat.size)
+            dist_y = np.zeros(each.lon.size)
+            dist_z = each.alt - mean_z
+            for i in each.lat.index:
+                dist_x[i] = gdist(
+                    [each.lat.iloc[i], each.lon.iloc[i]],
+                    [mean_x, each.lon.iloc[i]],
+                ).m
+                dist_y[i] = gdist(
+                    [each.lat.iloc[i], each.lon.iloc[i]],
+                    [each.lat.iloc[i], mean_y],
+                ).m
+                if each.lat.iloc[i] < mean_x:
+                    dist_x[i] *= -1
+                if each.lon.iloc[i] < mean_y:
+                    dist_y[i] *= -1
+            mean_x = dist_x.mean()
+            mean_y = dist_y.mean()
+            mean_z = dist_z.mean()
+            std_x = dist_x.std()
+            std_y = dist_y.std()
+            std_z = dist_z.std()
+            R_2D_2DRMS = 2 * np.sqrt(std_x ** 2 + std_y ** 2)
+            R_3D_2DRMS = 2 * np.sqrt(std_x ** 2 + std_y ** 2 + std_z ** 2)
+            fig, ax = pyplot.subplots(
+                1,
+                2,
+                dpi=400,
+                figsize=(16, 9),
+                gridspec_kw={"width_ratios": [5, 1]},
+                sharey=True,
+            )
+            ax[0].scatter(
+                dist_x,
+                dist_y,
+                c="blue",
+                s=1,
+                marker=".",
+                label="Recorded positions",
+            )
+            circle_2D = pyplot.Circle(
+                (mean_x, mean_y),
+                radius=R_2D_2DRMS,
+                color="red",
+                fill=False,
+                label="2DRMS (2D): " + "{0:1.2f}".format(R_2D_2DRMS) + " m",
+            )
+            circle_3D = pyplot.Circle(
+                (mean_x, mean_y),
+                radius=R_3D_2DRMS,
+                color="green",
+                fill=False,
+                label="2DRMS (3D): " + "{0:1.2f}".format(R_3D_2DRMS) + " m",
+            )
+            ax[0].add_patch(circle_2D)
+            ax[0].add_patch(circle_3D)
+            ax[0].set(
+                xlabel="Longitudinal distance [m]",
+                ylabel="Lateral distance [m]",
+                aspect="equal",
+                adjustable="datalim",
+            )
+            ax[0].legend()
+            ax[1].scatter(
+                each.index,
+                dist_z,
+                c="blue",
+                s=1,
+                marker=".",
+                label="Recorded altitude",
+            )
+            ax[1].axhline(R_3D_2DRMS, color="green")
+            ax[1].axhline(-R_3D_2DRMS, color="green")
+            ax[1].set(ylabel="Vertical distance [m]", xticks=[])
+            ax[1].yaxis.set_tick_params(labelleft=True)
+            pyplot.savefig(
+                os.path.join(graph_dir, "cond_static_" + str(each_idx) + ".png"),
+                dpi=400,
+            )
+        print("Static graph plotted.")
 
         """Plot single rides on map."""
         myMap = folium.Map(location=[latitude, longitude], tiles="CartoDB positron")
@@ -717,6 +841,7 @@ class Realizations:
             fig.yaxis[0].axis_label = "Altitude [m]"
             fig.toolbar_location = None
         export_png(fig, filename=os.path.join(graph_dir, "cond_alt.png"))
+        print("Altitude plotted.")
 
         """Plot speed."""
         fig = plt.figure(plot_width=700, plot_height=400)
@@ -744,6 +869,7 @@ class Realizations:
             fig.yaxis[0].axis_label = "Speed [km/h]"
             fig.toolbar_location = None
         export_png(fig, filename=os.path.join(graph_dir, "cond_speed.png"))
+        print("Speed plotted.")
 
         """Plot xDOP and nSAT."""
         cols = ["pdop", "hdop", "vdop", "nSAT"]
@@ -779,6 +905,7 @@ class Realizations:
                 fig,
                 filename=os.path.join(graph_dir, "cond_dop_" + str(each_idx) + ".png"),
             )
+        print("xDOP plotted.")
 
         """Plot conditioned single rides graphs."""
         if conditionedData:
