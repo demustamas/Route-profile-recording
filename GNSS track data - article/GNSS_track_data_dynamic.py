@@ -14,32 +14,21 @@ import numpy as np
 from geopy.distance import distance as gdist
 from geopy.point import Point
 from scipy import signal, stats
-from scipy.interpolate import interp1d
 from bokeh import plotting as plt
 from bokeh import layouts as lyt
-from bokeh.models import (
-    ColumnDataSource,
-    LabelSet,
-    ZoomInTool,
-    ZoomOutTool,
-)
 from bokeh.io import export_png
 
-from matplotlib import pyplot
 
 import sys
 import os
 
 """TODOs"""
-# static diagram
-# dynamic diagram
+# Parameter calculation
 
 """Simulation input parameters"""
 
 working_dir = "Dynamic/"
-station_dir = "Stations/"
 graph_dir = "Graphs/"
-station_file = "FA_SU_IR.csv"
 
 
 """PATH"""
@@ -63,12 +52,10 @@ def main():
     """Calling simulation model."""
     print("\nFiles found:")
     [print(x) for x in GNSS_files]
-
-    Model.generateStations(working_dir, station_dir, station_file)
+    print("\n")
     Model.loadRealization(working_dir, GNSS_files)
     Model.conditionRealization()
-    Model.aggregateRealization()
-    Model.averageRealization()
+    Model.calcParams()
     Model.graph(
         GNSS_files,
         graph_map,
@@ -93,16 +80,6 @@ class Realizations:
             columns=["lon", "lat", "alt", "alt_std",
                      "v", "v_std", "s", "a", "a_std"]
         )
-
-    def generateStations(self, wdir, sdir, filename):
-        try:
-            file = os.path.join(wdir, sdir, filename)
-            print("\nStation file:")
-            print(station_file, "\n")
-            self.stations = pd.read_csv(file)
-        except FileNotFoundError:
-            print(f"{filename} Station data: File not found!")
-            print("Stations not generated!\n")
 
     def loadRealization(self, wdir, fileList):
         """Load and calculate GNSS data from file."""
@@ -470,129 +447,30 @@ class Realizations:
             print(f"Removed {N_deleted} points from {each.iloc[0,1]}")
         print("\nData conditioning performed.\n")
 
-    def aggregateRealization(self):
-        """Aggregate GNSS data into one dataframe."""
-
-        """Copy first dataset."""
-        for each in ["lon", "lat", "alt", "v", "s", "a"]:
-            self.sumRealization[each] = self.condRealizations[0][each]
-        print(f"{GNSS_files[0]} aggregated.")
-
-        """Merge additional GNSS data sets."""
-        df = self.sumRealization.copy()
-
-        cols = ["lat", "lon", "alt", "v"]
-        N_rolling = 16
-
-        for idx in np.arange(1, len(self.condRealizations)):
-            """Set distance offset based on cross-correlation."""
-
-            interp_df = pd.DataFrame(columns=["x"] + cols)
-            interp_cond = pd.DataFrame(columns=["x"] + cols)
-            correlation = pd.DataFrame(
-                columns=cols + [each + "_lag" for each in cols])
-
-            f_df = []
-            f_cond = []
-
-            dist_offset = np.arange(len(cols), dtype=float)
-
-            interp_df.x = np.arange(df.s.iloc[0], df.s.iloc[-1], 0.001)
-            interp_cond.x = np.arange(
-                self.condRealizations[idx].s.iloc[0],
-                self.condRealizations[idx].s.iloc[-1],
-                0.001,
-            )
-
-            for i, col in enumerate(cols):
-                f_df.append(interp1d(df.s, df[col]))
-                f_cond.append(
-                    interp1d(
-                        self.condRealizations[idx].s, self.condRealizations[idx][col]
-                    )
-                )
-
-                interp_df[col] = f_df[i](interp_df.x)
-                interp_cond[col] = f_cond[i](interp_cond.x)
-
-                interp_df_mean = (
-                    interp_df[col]
-                    .rolling(2 * N_rolling, center=True, min_periods=1)
-                    .mean()
-                )
-                interp_cond_mean = (
-                    interp_cond[col]
-                    .rolling(2 * N_rolling, center=True, min_periods=1)
-                    .mean()
-                )
-
-                interp_df[col] -= interp_df_mean
-                interp_cond[col] -= interp_cond_mean
-
-                correlation[col] = signal.correlate(
-                    interp_df[col], interp_cond[col], mode="valid"
-                )
-                correlation[col + "_lag"] = signal.correlation_lags(
-                    interp_df[col].size, interp_cond[col].size, mode="valid"
-                )
-
-                dist_offset[i] = (
-                    correlation[col +
-                                "_lag"][np.argmax(correlation[col])] / 1000
-                )
-
-            print(dist_offset)
-            dist_mean = np.mean(dist_offset)
-            dist_stdev = np.std(dist_offset)
-            dist_offset = [
-                each for each in dist_offset if abs(each - dist_mean) <= dist_stdev
-            ]
-
-            offset = np.mean(dist_offset)
-            print(dist_offset)
-
-            self.condRealizations[idx].s += offset
-
-            """Merge dataset."""
-            df = df.append(
-                self.condRealizations[idx][df.columns.values.tolist()])
-            df.sort_values(by=["s"], inplace=True, ignore_index=True)
-
-            print(f"{GNSS_files[idx]} aggregated.")
-
-        self.sumRealization = df
-
-        for col in cols:
-            fig, ax = pyplot.subplots()
-            for idx, each in enumerate(self.condRealizations):
-                ax.plot(each.s, each[col], label=idx)
-                ax.legend()
-
-        print("\nData aggregation completed.\n")
-
-    def averageRealization(self):
-        """Clean sum GNSS data."""
-        self.avRealization.s = self.sumRealization.s
-
-        """Calculate rolling median of GNSS data based on distance."""
-        cols = ["alt", "v", "lat", "lon", "a"]
-        N = [50, 50, 50, 50, 50]
-
-        for n, col in enumerate(cols):
-            self.avRealization[col] = (
-                self.sumRealization[col]
-                .rolling(N[n], center=True, min_periods=1)
-                .mean()
-            )
-            if col in ["alt", "v", "a"]:
-                centered = self.sumRealization[col] - self.avRealization[col]
-                self.avRealization[col + "_std"] = centered.rolling(
-                    N[n], center=True, min_periods=1
-                ).std()
-
-        print("Rolling means calculated.")
-
-        print("\nMean and standard deviation values calculated.\n")
+    def calcParams(self):
+        """Calculate dynamic characteristics."""
+        v_lim = [60, 70, 80, 90, 100, 110, 120]
+        v_mean = np.zeros(3)
+        v_std = np.zeros(3)
+        print("Dynamic parameters - RAW data:\n")
+        for i in range(len(v_lim)):
+            for each_idx, each in enumerate(self.rawRealizations):
+                v_mean[each_idx] = each.v[(v_lim[i] < each.v) & (
+                    each.v < v_lim[i] + 10)].mean()
+                v_std[each_idx] = each.v[(v_lim[i] < each.v) & (
+                    each.v < v_lim[i] + 10)].std()
+            print("\t{0:3d}\t{1:7.2f} {2:7.2f}\t{3:7.2f} {4:7.2f}\t{5:7.2f} {6:7.2f}".format(
+                v_lim[i]+10, v_mean[0], v_std[0], v_mean[1], v_std[1], v_mean[2], v_std[2]))
+        print("\nDynamic parameters - COND data:\n")
+        for i in range(len(v_lim)):
+            for each_idx, each in enumerate(self.condRealizations):
+                v_mean[each_idx] = each.v[(v_lim[i] < each.v) & (
+                    each.v < v_lim[i] + 10)].mean()
+                v_std[each_idx] = each.v[(v_lim[i] < each.v) & (
+                    each.v < v_lim[i] + 10)].std()
+            print("\t{0:3d}\t{1:7.2f} {2:7.2f}\t{3:7.2f} {4:7.2f}\t{5:7.2f} {6:7.2f}".format(
+                v_lim[i]+10, v_mean[0], v_std[0], v_mean[1], v_std[1], v_mean[2], v_std[2]))
+        print("\nDynamic characteristics calculated.\n")
 
     def graph(
         self,
@@ -625,177 +503,6 @@ class Realizations:
             length += len(track)
         latitude /= length
         longitude /= length
-
-        """Static graph."""
-        for each_idx, each in enumerate(self.rawRealizations):
-            mean_x = each.lat.mean()
-            mean_y = each.lon.mean()
-            mean_z = each.alt.mean()
-            dist_x = np.zeros(each.lat.size)
-            dist_y = np.zeros(each.lon.size)
-            dist_z = each.alt - mean_z
-            for i in each.lat.index:
-                dist_x[i] = gdist(
-                    [each.lat.iloc[i], each.lon.iloc[i]],
-                    [mean_x, each.lon.iloc[i]],
-                ).m
-                dist_y[i] = gdist(
-                    [each.lat.iloc[i], each.lon.iloc[i]],
-                    [each.lat.iloc[i], mean_y],
-                ).m
-                if each.lat.iloc[i] < mean_x:
-                    dist_x[i] *= -1
-                if each.lon.iloc[i] < mean_y:
-                    dist_y[i] *= -1
-            mean_x = dist_x.mean()
-            mean_y = dist_y.mean()
-            mean_z = dist_z.mean()
-            std_x = dist_x.std()
-            std_y = dist_y.std()
-            std_z = dist_z.std()
-            R_2D_2DRMS = 2 * np.sqrt(std_x ** 2 + std_y ** 2)
-            R_3D_2DRMS = 2 * np.sqrt(std_x ** 2 + std_y ** 2 + std_z ** 2)
-            fig, ax = pyplot.subplots(
-                1,
-                2,
-                dpi=400,
-                figsize=(16, 9),
-                gridspec_kw={"width_ratios": [5, 1]},
-                sharey=True,
-            )
-            ax[0].scatter(
-                dist_x,
-                dist_y,
-                c="blue",
-                s=1,
-                marker=".",
-                label="Recorded positions",
-            )
-            circle_2D = pyplot.Circle(
-                (mean_x, mean_y),
-                radius=R_2D_2DRMS,
-                color="red",
-                fill=False,
-                label="2DRMS (2D): " + "{0:1.2f}".format(R_2D_2DRMS) + " m",
-            )
-            circle_3D = pyplot.Circle(
-                (mean_x, mean_y),
-                radius=R_3D_2DRMS,
-                color="green",
-                fill=False,
-                label="2DRMS (3D): " + "{0:1.2f}".format(R_3D_2DRMS) + " m",
-            )
-            ax[0].add_patch(circle_2D)
-            ax[0].add_patch(circle_3D)
-            ax[0].set(
-                xlabel="Longitudinal distance [m]",
-                ylabel="Lateral distance [m]",
-                aspect="equal",
-                adjustable="datalim",
-            )
-            ax[0].legend()
-            ax[1].scatter(
-                each.index,
-                dist_z,
-                c="blue",
-                s=1,
-                marker=".",
-                label="Recorded altitude",
-            )
-            ax[1].axhline(R_3D_2DRMS, color="green")
-            ax[1].axhline(-R_3D_2DRMS, color="green")
-            ax[1].set(ylabel="Vertical distance [m]", xticks=[])
-            ax[1].yaxis.set_tick_params(labelleft=True)
-            pyplot.savefig(
-                os.path.join(graph_dir, "raw_static_" +
-                             str(each_idx) + ".png"),
-                dpi=400,
-            )
-        for each_idx, each in enumerate(self.condRealizations):
-            mean_x = each.lat.mean()
-            mean_y = each.lon.mean()
-            mean_z = each.alt.mean()
-            dist_x = np.zeros(each.lat.size)
-            dist_y = np.zeros(each.lon.size)
-            dist_z = each.alt - mean_z
-            for i in each.lat.index:
-                dist_x[i] = gdist(
-                    [each.lat.iloc[i], each.lon.iloc[i]],
-                    [mean_x, each.lon.iloc[i]],
-                ).m
-                dist_y[i] = gdist(
-                    [each.lat.iloc[i], each.lon.iloc[i]],
-                    [each.lat.iloc[i], mean_y],
-                ).m
-                if each.lat.iloc[i] < mean_x:
-                    dist_x[i] *= -1
-                if each.lon.iloc[i] < mean_y:
-                    dist_y[i] *= -1
-            mean_x = dist_x.mean()
-            mean_y = dist_y.mean()
-            mean_z = dist_z.mean()
-            std_x = dist_x.std()
-            std_y = dist_y.std()
-            std_z = dist_z.std()
-            R_2D_2DRMS = 2 * np.sqrt(std_x ** 2 + std_y ** 2)
-            R_3D_2DRMS = 2 * np.sqrt(std_x ** 2 + std_y ** 2 + std_z ** 2)
-            fig, ax = pyplot.subplots(
-                1,
-                2,
-                dpi=400,
-                figsize=(16, 9),
-                gridspec_kw={"width_ratios": [5, 1]},
-                sharey=True,
-            )
-            ax[0].scatter(
-                dist_x,
-                dist_y,
-                c="blue",
-                s=1,
-                marker=".",
-                label="Recorded positions",
-            )
-            circle_2D = pyplot.Circle(
-                (mean_x, mean_y),
-                radius=R_2D_2DRMS,
-                color="red",
-                fill=False,
-                label="2DRMS (2D): " + "{0:1.2f}".format(R_2D_2DRMS) + " m",
-            )
-            circle_3D = pyplot.Circle(
-                (mean_x, mean_y),
-                radius=R_3D_2DRMS,
-                color="green",
-                fill=False,
-                label="2DRMS (3D): " + "{0:1.2f}".format(R_3D_2DRMS) + " m",
-            )
-            ax[0].add_patch(circle_2D)
-            ax[0].add_patch(circle_3D)
-            ax[0].set(
-                xlabel="Longitudinal distance [m]",
-                ylabel="Lateral distance [m]",
-                aspect="equal",
-                adjustable="datalim",
-            )
-            ax[0].legend()
-            ax[1].scatter(
-                each.index,
-                dist_z,
-                c="blue",
-                s=1,
-                marker=".",
-                label="Recorded altitude",
-            )
-            ax[1].axhline(R_3D_2DRMS, color="green")
-            ax[1].axhline(-R_3D_2DRMS, color="green")
-            ax[1].set(ylabel="Vertical distance [m]", xticks=[])
-            ax[1].yaxis.set_tick_params(labelleft=True)
-            pyplot.savefig(
-                os.path.join(graph_dir, "cond_static_" +
-                             str(each_idx) + ".png"),
-                dpi=400,
-            )
-        print("Static graph plotted.")
 
         """Plot single rides on map."""
         myMap = folium.Map(
@@ -961,50 +668,6 @@ class Realizations:
             plt.output_file(gGNSS)
             plt.save(lyt.gridplot(fig, ncols=2, sizing_mode="scale_width"))
             print("Conditioned data plotted.")
-
-        """Plot sum ride data."""
-        k = 0
-        fig_sum = []
-        for j, y in enumerate(["alt", "v", "a"]):
-            fig_sum.append(plt.figure(plot_height=250))
-            fig_sum[k].line(
-                self.avRealization.s,
-                self.avRealization[y],
-                line_color=linecolor[j],
-                line_dash="dotted",
-            )
-            for each in self.condRealizations:
-                fig_sum[k].line(
-                    each.s, each[y], line_alpha=0.2, line_color=linecolor[j]
-                )
-
-            fig_sum[k].varea(
-                self.avRealization.s,
-                self.avRealization[y] - 3 * self.avRealization[y + "_std"],
-                self.avRealization[y] + 3 * self.avRealization[y + "_std"],
-                fill_color=linecolor[j],
-                fill_alpha=0.1,
-            )
-
-            source = ColumnDataSource(data=self.stations)
-            labels = LabelSet(
-                x="s",
-                y=0,
-                text="station",
-                text_font_size="12px",
-                text_font_style="bold",
-                angle=np.pi / 2,
-                source=source,
-                render_mode="canvas",
-            )
-            fig_sum[k].add_layout(labels)
-            fig_sum[k].add_tools(ZoomInTool(), ZoomOutTool())
-            fig_sum[k].xaxis[0].axis_label = self.sumRealization.s.name
-            fig_sum[k].yaxis[0].axis_label = self.sumRealization[y].name
-            k += 1
-        plt.output_file(gGNSSsum)
-        plt.save(lyt.gridplot(fig_sum, ncols=1, sizing_mode="scale_width"))
-        print("Track parameters plotted.")
         print("\nGraph completed.\n")
 
 
