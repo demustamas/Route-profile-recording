@@ -1,0 +1,49 @@
+fileName,recType,dateTime,fromStation,toStation,trainConfig,trainType,receiverType
+BFBV_MT_20210709_162342_HEV.gpx,route,2021/07/09 16:23:42,,,,HEV,
+CE_SM_20210827_154257.gpx,route,2021/08/27 15:42:57,Celldömölk,Szombathely,,,
+CR_CT_20210925_224715_HEV.gpx,route,2021/09/25 22:47:15,,Cinkota,,HEV,
+CR_OV_20210925_213058_HEV.gpx,route,2021/09/25 21:30:58,,Örs Vezér Tere,,HEV,
+CT_CR_20210925_211618_HEV.gpx,route,2021/09/25 21:16:18,Cinkota,,,HEV,
+CT_GL_20210925_153122_HEV.gpx,route,2021/09/25 15:31:22,Cinkota,,,HEV,
+CT_GL_20210925_183024_HEV.gpx,route,2021/09/25 18:30:24,Cinkota,,,HEV,
+EP_SU_20210802_160743_IR_cut_FA_SU.gpx,route,2021/08/02 16:07:43,Füzesabony,Keleti,FLIRT+FLIRT,IR,IPhone 11 Pro
+EP_SU_20210802_160743_IR.gpx,route,2021/08/02 16:07:43,Eger,Keleti,FLIRT+FLIRT,IR,IPhone 11 Pro
+EP_SU_20211017_170819_IR_cut_FA_SU_UBX.CSV,route,2021/10/17 17:08:19,Füzesabony,Keleti,FLIRT+FLIRT,IR,U-blox M8N
+EP_SU_20211017_170819_IR_cut_FA_SU.gpx,route,2021/10/17 17:08:19,Füzesabony,Keleti,FLIRT+FLIRT,IR,IPhone 11 Pro
+EP_SU_20211017_170819_IR_UBX.CSV,route,2021/10/17 17:08:19,Eger,Keleti,FLIRT+FLIRT,IR,U-blox M8N
+EP_SU_20211017_170819_IR.gpx,route,2021/10/17 17:08:19,Eger,Keleti,FLIRT+FLIRT,IR,IPhone 11 Pro
+FA_SU_20210629_103517_IR.gpx,route,2021/06/29 10:35:17,Füzesabony,Keleti,FLIRT+FLIRT,IR,IPhone 11 Pro
+FA_SU_20211031_183238_IR_UBX.csv,route,2021/10/31 18:32:38,Füzesabony,Keleti,FLIRT+FLIRT,IR,U-blox M8N
+FA_SU_20211031_183238_IR.gpx,route,2021/10/31 18:32:38,Füzesabony,Keleti,FLIRT+FLIRT,IR,IPhone 11 Pro
+GL_OV_20210925_162359_HEV.gpx,route,2021/09/25 16:23:59,Gödöllő,Örs Vezér Tere,,HEV,
+GL_OV_20210925_192410_HEV.gpx,route,2021/09/25 19:24:10,Gödöllő,Örs Vezér Tere,,HEV,
+GY_SU_20210829_185811_IR.gpx,route,2021/08/29 18:58:11,Vámosgyörk,Keleti,,IR,IPhone 11 Pro
+KL_PS_20210829_060824_IC.gpx,route,2021/08/29 06:08:24,Kelenföld,Pécs,,IC,IPhone 11 Pro
+MH_BM_20210709_174638.gpx,route,2021/07/09 17:46:38,Margit híd,Békásmegyer,,,
+OV_CR_20210925_220807_HEV.gpx,route,2021/09/25 22:08:07,Örs Vezér Tere,,,HEV,
+OV_CT_20210925_171749_HEV.gpx,route,2021/09/25 17:17:49,Örs Vezér Tere,Cinkota,,HEV,
+OV_CT_20210925_201756_HEV.gpx,route,2021/09/25 20:17:56,Örs Vezér Tere,Cinkota,,HEV,
+PS_GV_20210829_090236_IR.gpx,route,2021/08/29 09:02:36,Pécs,Győr,,IR,IPhone 11 Pro
+SR_SU_20210715_085129_IC_cut_FA_SU.gpx,route,2021/07/15 08:51:29,Füzesabony,Keleti,,IC,IPhone 11 Pro
+SR_SU_20210715_085129_IC.gpx,route,2021/07/15 08:51:29,Szerencs,Keleti,,IC,IPhone 11 Pro
+SU_EP_20210804_130228_IR_cut_SU_FA.gpx,route,2021/08/04 13:02:28,Keleti,Füzesabony,,IR,IPhone 11 Pro
+SU_EP_20210804_130228_IR.gpx,route,2021/08/04 13:02:28,Keleti,Eger,FLIRT+FLIRT,IR,IPhone 11 Pro
+SU_FA_20210701_110111_IR.gpx,route,2021/07/01 11:01:11,Keleti,Füzesabony,FLIRT+FLIRT,IR,IPhone 11 Pro
+SU_FA_20210819_140037_IR.gpx,route,2021/08/19 14:00:37,Keleti,Füzesabony,FLIRT+FLIRT,IR,IPhone 11 Pro
+SU_FA_20210924_200517_IR.gpx,route,2021/09/24 20:05:17,Keleti,Füzesabony,FLIRT+FLIRT,IR,IPhone 11 Pro
+SU_FA_20211016_180108_IR.gpx,route,2021/10/16 18:01:08,Keleti,Füzesabony,FLIRT+FLIRT,IR,IPhone 11 Pro
+SU_FA_20211030_170126_IR_UBX.csv,route,2021/10/30 17:01:26,Keleti,Füzesabony,FLIRT+FLIRT,IR,U-blox M8N
+SU_FA_20211030_170126_IR.gpx,route,2021/10/30 17:01:26,Keleti,Füzesabony,FLIRT+FLIRT,IR,IPhone 11 Pro
+SU_TA_20211008_200054_IR.gpx,route,2021/10/08 20:00:54,Keleti,Tura,FLIRT+FLIRT,IR,
+SU_TA_20211015_172651_Z.gpx,route,2021/10/15 17:26:51,Keleti,Tura,,Z,
+X_FA_SU_20210912_110839_IC.gpx,corrupted,2021/09/12 11:08:39,Füzesabony,Keleti,,IC,IPhone 11 Pro
+X_SU_FA_20210910_130004_IR.gpx,corrupted,2021/09/10 13:00:04,Keleti,Füzesabony,FLIRT+FLIRT,IR,IPhone 11 Pro
+X_SU_FA_20211016_180108_IR_UBX.CSV,corrupted,2021/10/16 18:01:08,Keleti,Füzesabony,FLIRT+FLIRT,IR,U-blox M8N
+X_SU_TA_20210929_172819_Z.gpx,corrupted,2021/09/29 17:28:19,Keleti,Tura,,Z,
+X_SU_TA_20211004_180246_IR.gpx,corrupted,2021/10/04 18:02:46,Keleti,Tura,,IR,
+PMTK1006_2_PMTK.csv,dynamic,2021/11/28 13:14:33,NA,NA,car,car,MTK 3339
+PMTK1006_PMTK.csv,dynamic,2021/11/28 13:14:33,NA,NA,car,car,MTK 3339
+UBX10004_2_UBX.csv,dynamic,2021/11/28 13:14:33,NA,NA,car,car,U-blox M8N
+UBX10004_UBX.csv,dynamic,2021/11/28 13:14:33,NA,NA,car,car,U-blox M8N
+moGPXTracker_20211128131433.gpx,dynamic,2021/11/28 13:14:33,NA,NA,car,car,IPhone 11 Pro
+moGPXTracker_20211128131433_2.gpx,dynamic,2021/11/28 13:14:33,NA,NA,car,car,IPhone 11 Pro
