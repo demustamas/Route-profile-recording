@@ -18,40 +18,31 @@ import sys
 import os
 
 """TODOs"""
-# create SQL database
-# check integrity
-# update list of recordings
-# read in new recordings
-# save recordings to database
 
 """PATH"""
 
 database_dir = "Database/"
 database_name = "GNSS recordings.db"
 recordings_dir = "GNSS recordings/"
-list_of_recordings = ".listOfRecordings.csv"
+list_of_recordings = "listOfRecordings.csv"
 
 if not os.path.exists(database_dir):
     os.makedirs(database_dir)
 
 database_path = os.path.join(database_dir, database_name)
-list_of_recs_path = os.path.join(recordings_dir, list_of_recordings)
 
 GNSS_files = [
-    f for f in os.listdir(recordings_dir) if os.path.isfile(os.path.join(recordings_dir, f))
+    f for f in os.listdir(os.path.join(database_dir, recordings_dir)) if os.path.isfile(os.path.join(database_dir, recordings_dir, f))
 ]
-GNSS_files.remove(list_of_recordings)
-
+GNSS_files.sort()
 
 """Main simulation class"""
 
 
 def main():
     """Calling simulation model."""
-    print("\nFiles found:")
-    [print(x) for x in GNSS_files]
 
-    Model.initDatabase(database_path, GNSS_files, list_of_recs_path)
+    Model.initDatabase(database_path, GNSS_files, list_of_recordings)
     Model.loadRealization(recordings_dir)
     Model.saveToDatabase(database_path)
 
@@ -76,6 +67,7 @@ class Realizations:
             print(f"{listOfRecs} initDatabase: File not found!")
             sys.exit()
 
+        print("\n")
         for each in fileList:
             entryCounter = df_recs.fileName.str.contains(each).sum()
             if entryCounter == 0:
@@ -107,6 +99,9 @@ class Realizations:
             con.commit()
             db_recs = pd.read_sql("""SELECT * FROM listOfRecordings""", con)
 
+        con.close()
+
+        pd.set_option('display.max_columns', None)
         print("\nDatabase content:")
         print(db_recs)
 
@@ -117,13 +112,22 @@ class Realizations:
 
         print("\nNew recordings found:")
         print(self.newRecordings)
-        con.close()
+        if not self.newRecordings.empty:
+            ans = input("\nContinue with database update? (y/n)")
+            if ans == 'y' or ans == '':
+                print("Updating database.")
+            else:
+                print("Exiting.")
+                sys.exit()
+        else:
+            print("\nDatabase is up to date.")
+            sys.exit()
 
     def loadRealization(self, recPath):
         """Load and calculate GNSS data from file."""
         for file_idx, file_instance in enumerate(self.newRecordings.fileName):
             file = os.path.join(recPath, file_instance)
-            if file_instance.endswith("UBX.CSV") or file_instance.endswith("UBX.csv"):
+            if file_instance.endswith("UBX.CSV") or file_instance.endswith("UBX.csv") or file_instance.startswith("UBX"):
                 try:
                     df = pd.read_csv(file)
                 except FileNotFoundError:
@@ -218,7 +222,7 @@ class Realizations:
                 point_no = len(self.rawRealizations[-1].index)
                 print(f"Loaded {point_no} points from file {file_instance}")
 
-            if file_instance.endswith("PMTK.CSV") or file_instance.endswith("PMTK.csv"):
+            if file_instance.endswith("PMTK.CSV") or file_instance.endswith("PMTK.csv") or file_instance.startswith("PMTK"):
                 try:
                     df = pd.read_csv(file)
                 except FileNotFoundError:
