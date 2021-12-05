@@ -61,7 +61,7 @@ def main():
 
     # Model.generateStations(station_path)
     Model.queryRealizations(working_path)
-    Model.staticGraph(graph_path)
+    # Model.staticGraph(graph_path)
     # Model.altitudeGraph(graph_path)
     # Model.speedGraph(graph_path)
     # Model.accuracyGraph(graph_path)
@@ -157,6 +157,7 @@ class Realizations:
             std_z = dist_z.std()
             R_2D_2DRMS = 2 * np.sqrt(std_x ** 2 + std_y ** 2)
             R_3D_2DRMS = 2 * np.sqrt(std_x ** 2 + std_y ** 2 + std_z ** 2)
+
             fig, ax = pyplot.subplots(
                 1,
                 2,
