@@ -23,13 +23,11 @@ import os
 
 database_dir = "Database/"
 database_name = "GNSS recordings.db"
-working_dir = "Dynamic/"
+working_dir = "Static/"
 
 sql_query = """SELECT * 
     FROM listOfRecordings 
-    WHERE recType = 'dynamic'
-    AND fromStation = 'A'
-    AND toStation = 'B'
+    WHERE recType = 'static'
     """
 
 """SELECT * 
@@ -84,10 +82,12 @@ class Realizations:
         self.query = pd.read_sql(sqlQuery, con)
         print("\nFollowing realizations selected:")
         pd.set_option('display.max_columns', None)
-        print(self.query)
+        print(self.query, "\n")
         for each in self.query.fileName:
             self.rawRealizations.append(
                 pd.read_sql(f"SELECT * FROM \"{each}\"", con))
+            print(
+                f"{len(self.rawRealizations[-1].index):10} datapoints found in {each}.")
         con.close()
         print("\nRealizations loaded.\n")
 
@@ -138,14 +138,14 @@ class Realizations:
         cols = ["lon", "lat", "alt", "v"]
         for each in self.condRealizations:
             for col in cols:
-                each[col] = signal.savgol_filter(each[col], 51, 2)
+                each[col] = signal.savgol_filter(each[col], 11, 2)
 
         cols = ["a"]
         for each in self.condRealizations:
             for col in cols:
-                each[col] = signal.savgol_filter(each[col], 51, 2)
+                each[col] = signal.savgol_filter(each[col], 11, 2)
 
-        """Print out conditioning data."""
+        """Print out conditioned data."""
         for idx, each in enumerate(self.condRealizations):
             N_deleted = len(self.rawRealizations[idx]) - len(each)
             print(f"Removed {N_deleted} points from {each.iloc[0,1]}")
@@ -273,7 +273,7 @@ class Realizations:
 
         """Calculate rolling median of GNSS data based on distance."""
         cols = ["alt", "v", "lat", "lon", "a"]
-        N = [50, 50, 50, 50, 50]
+        N = [10, 10, 10, 10, 10]
 
         for n, col in enumerate(cols):
             self.avRealization[col] = (
@@ -326,4 +326,5 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
+"""EOF"""
 """EOF"""

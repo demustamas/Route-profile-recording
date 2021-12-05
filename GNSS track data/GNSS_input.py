@@ -30,6 +30,7 @@ if not os.path.exists(database_dir):
     os.makedirs(database_dir)
 
 database_path = os.path.join(database_dir, database_name)
+recordings_path = os.path.join(database_dir, recordings_dir)
 
 GNSS_files = [
     f for f in os.listdir(os.path.join(database_dir, recordings_dir)) if os.path.isfile(os.path.join(database_dir, recordings_dir, f))
@@ -43,7 +44,7 @@ def main():
     """Calling simulation model."""
 
     Model.initDatabase(database_path, GNSS_files, list_of_recordings)
-    Model.loadRealization(recordings_dir)
+    Model.loadRealization(recordings_path)
     Model.saveToDatabase(database_path)
 
 
@@ -100,10 +101,19 @@ class Realizations:
             db_recs = pd.read_sql("""SELECT * FROM listOfRecordings""", con)
 
         con.close()
-
         pd.set_option('display.max_columns', None)
         print("\nDatabase content:")
         print(db_recs)
+
+        print(
+            f"\nChecking integrity of database with {listOfRecs}")
+        db_recs.drop(columns='id', inplace=True)
+        for each in db_recs.fileName:
+            posf = df_recs.loc[df_recs.fileName == each]
+            posd = db_recs.loc[db_recs.fileName == each]
+
+            if (posf.iloc[0] != posd.iloc[0]).any():
+                print(f"Inconsistency found: {each}")
 
         for each in db_recs.fileName:
             if any(each in x for x in self.newRecordings.fileName):
@@ -113,14 +123,14 @@ class Realizations:
         print("\nNew recordings found:")
         print(self.newRecordings)
         if not self.newRecordings.empty:
-            ans = input("\nContinue with database update? (y/n)")
+            ans = input("\nContinue with database update? (y/n): ")
             if ans == 'y' or ans == '':
-                print("Updating database.")
+                print("\nUpdating database.\n")
             else:
-                print("Exiting.")
+                print("\nExiting.\n")
                 sys.exit()
         else:
-            print("\nDatabase is up to date.")
+            print("\nDatabase is up to date.\n")
             sys.exit()
 
     def loadRealization(self, recPath):
@@ -430,8 +440,10 @@ class Realizations:
     def saveToDatabase(self, db_path):
         con = sql.connect(db_path)
         for each in self.rawRealizations:
+            print("Uploading {each['Track name'].iloc[0]} to database.")
             each.to_sql(each['Track name'].iloc[0], con,
                         if_exists='replace', index=False)
+        print("Uploading new entries to database recordings list.")
         self.newRecordings.to_sql(
             'listOfRecordings', con, if_exists='append', index=False)
         con.close()

@@ -27,17 +27,18 @@ from matplotlib import pyplot
 import itertools
 
 import os
+from shutil import copy
 
 """TODOs"""
-# static diagram
-# dynamic diagram
 
 """Simulation input parameters"""
 
 database_dir = "Database/"
-working_dir = "Dynamic/"
+working_dir = "Static/"
 station_dir = "Stations/"
 graph_dir = "Graphs/"
+destination_dir = "ToCopy/"
+name_tag = "_2"
 
 
 """PATH"""
@@ -46,7 +47,8 @@ working_path = os.path.join(database_dir, working_dir)
 graph_path = os.path.join(database_dir, working_dir, graph_dir)
 station_path = os.path.join(
     database_dir, working_dir, station_dir + "stations.csv")
-
+destination_path = os.path.join(
+    database_dir, working_dir, graph_dir, destination_dir)
 
 if not os.path.exists(graph_path):
     os.makedirs(graph_path)
@@ -57,16 +59,16 @@ if not os.path.exists(graph_path):
 def main():
     """Calling simulation model."""
 
-    Model.generateStations(station_path)
+    # Model.generateStations(station_path)
     Model.queryRealizations(working_path)
-    # Model.staticGraph(graph_path)
-    # Model.dynamicGraph)graph_path
+    Model.staticGraph(graph_path)
     # Model.altitudeGraph(graph_path)
     # Model.speedGraph(graph_path)
     # Model.accuracyGraph(graph_path)
     # Model.mapGraph(graph_path)
     # Model.characteristicsGraph(graph_path)
-    Model.statisticGraph(graph_path)
+    # Model.statisticGraph(graph_path)
+    Model.copyFiles(graph_path, destination_path, name_tag)
 
 
 """Simulation model"""
@@ -206,6 +208,8 @@ class Realizations:
             ax[1].axhline(-R_3D_2DRMS, color="green")
             ax[1].set(ylabel="Vertical distance [m]", xticks=[])
             ax[1].yaxis.set_tick_params(labelleft=True)
+            fig.suptitle(
+                f"Raw data recorded with {self.query.receiverType.iloc[each_idx]}")
             pyplot.savefig(
                 os.path.join(graphPath, "raw_static_" +
                              str(each_idx) + ".png"),
@@ -290,6 +294,8 @@ class Realizations:
             ax[1].axhline(-R_3D_2DRMS, color="green")
             ax[1].set(ylabel="Vertical distance [m]", xticks=[])
             ax[1].yaxis.set_tick_params(labelleft=True)
+            fig.suptitle(
+                f"Conditioned data recorded with {self.query.receiverType.iloc[each_idx]}")
             pyplot.savefig(
                 os.path.join(graphPath, "cond_static_" +
                              str(each_idx) + ".png"),
@@ -539,9 +545,17 @@ class Realizations:
         plt.save(lyt.gridplot(fig_sum, ncols=1, sizing_mode="scale_width"))
         print("Route statistics plotted.")
 
+    def copyFiles(self, graphPath, destPath, tag):
+        try:
+            [os.remove(os.path.join(destPath, f)) for f in os.listdir(
+                destPath) if os.path.isfile(os.path.join(destPath, f))]
+        except FileNotFoundError:
+            os.makedirs(destPath)
+        [copy(graphPath + f, destPath + os.path.splitext(f)[0] + tag + os.path.splitext(f)[1])
+         for f in os.listdir(graphPath) if os.path.isfile(os.path.join(graphPath, f))]
+
 
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
-"""EOF"""
 """EOF"""
