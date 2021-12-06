@@ -14,14 +14,12 @@ import numpy as np
 from geopy.distance import distance as gdist
 from bokeh import plotting as plt
 from bokeh import layouts as lyt
-from bokeh.palettes import Category10_10 as palette
 from bokeh.models import (
     ColumnDataSource,
     LabelSet,
     ZoomInTool,
     ZoomOutTool,
 )
-from bokeh.io import export_png
 
 from matplotlib import pyplot
 import itertools
@@ -34,21 +32,19 @@ from shutil import copy
 """Simulation input parameters"""
 
 database_dir = "Database/"
-working_dir = "Static/"
+working_dir = "Results/Static/"
 station_dir = "Stations/"
 graph_dir = "Graphs/"
 destination_dir = "ToCopy/"
-name_tag = "_2"
-
+name_tag = ""
+palette = pyplot.cm.tab10(range(10))
 
 """PATH"""
 
-working_path = os.path.join(database_dir, working_dir)
-graph_path = os.path.join(database_dir, working_dir, graph_dir)
-station_path = os.path.join(
-    database_dir, working_dir, station_dir + "stations.csv")
-destination_path = os.path.join(
-    database_dir, working_dir, graph_dir, destination_dir)
+working_path = working_dir
+graph_path = os.path.join(working_dir, graph_dir)
+station_path = os.path.join(working_dir, station_dir + "stations.csv")
+destination_path = destination_dir
 
 if not os.path.exists(graph_path):
     os.makedirs(graph_path)
@@ -64,7 +60,7 @@ def main():
     # Model.staticGraph(graph_path)
     # Model.altitudeGraph(graph_path)
     # Model.speedGraph(graph_path)
-    # Model.accuracyGraph(graph_path)
+    Model.accuracyGraph(graph_path)
     # Model.mapGraph(graph_path)
     # Model.characteristicsGraph(graph_path)
     # Model.statisticGraph(graph_path)
@@ -126,9 +122,6 @@ class Realizations:
     def staticGraph(self, graphPath):
         """Create static graphs."""
 
-        colors = itertools.cycle(palette)
-        c = [next(colors) for x in range(len(self.query.index))]
-
         for each_idx, each in enumerate(self.rawRealizations):
             mean_x = each.lat.mean()
             mean_y = each.lon.mean()
@@ -169,7 +162,7 @@ class Realizations:
             ax[0].scatter(
                 dist_x,
                 dist_y,
-                c=c[0],
+                color=palette[0],
                 s=1,
                 marker=".",
                 label="Recorded positions",
@@ -177,14 +170,14 @@ class Realizations:
             circle_2D = pyplot.Circle(
                 (mean_x, mean_y),
                 radius=R_2D_2DRMS,
-                color=c[1],
+                color=palette[1],
                 fill=False,
                 label="2DRMS (2D): " + "{0:1.2f}".format(R_2D_2DRMS) + " m",
             )
             circle_3D = pyplot.Circle(
                 (mean_x, mean_y),
                 radius=R_3D_2DRMS,
-                color=c[2],
+                color=palette[2],
                 fill=False,
                 label="2DRMS (3D): " + "{0:1.2f}".format(R_3D_2DRMS) + " m",
             )
@@ -200,7 +193,7 @@ class Realizations:
             ax[1].scatter(
                 each.index,
                 dist_z,
-                c=c[0],
+                color=palette[0],
                 s=1,
                 marker=".",
                 label="Recorded altitude",
@@ -255,7 +248,7 @@ class Realizations:
             ax[0].scatter(
                 dist_x,
                 dist_y,
-                c=c[0],
+                color=palette[0],
                 s=1,
                 marker=".",
                 label="Recorded positions",
@@ -263,14 +256,14 @@ class Realizations:
             circle_2D = pyplot.Circle(
                 (mean_x, mean_y),
                 radius=R_2D_2DRMS,
-                color=c[1],
+                color=palette[1],
                 fill=False,
                 label="2DRMS (2D): " + "{0:1.2f}".format(R_2D_2DRMS) + " m",
             )
             circle_3D = pyplot.Circle(
                 (mean_x, mean_y),
                 radius=R_3D_2DRMS,
-                color=c[2],
+                color=palette[2],
                 fill=False,
                 label="2DRMS (3D): " + "{0:1.2f}".format(R_3D_2DRMS) + " m",
             )
@@ -286,7 +279,7 @@ class Realizations:
             ax[1].scatter(
                 each.index,
                 dist_z,
-                c=c[0],
+                color=palette[0],
                 s=1,
                 marker=".",
                 label="Recorded altitude",
@@ -307,66 +300,74 @@ class Realizations:
     def altitudeGraph(self, graphPath):
         """Create altitude graph."""
 
-        colors = itertools.cycle(palette)
-        fig = plt.figure(plot_width=700, plot_height=400)
+        colors = iter(palette)
+        fig, ax = pyplot.subplots(1, 1, dpi=400, figsize=(16, 9))
         for each_idx, each in enumerate(self.rawRealizations):
-            fig.line(
+            ax.grid(True)
+            ax.plot(
                 each.s,
-                each.alt,
-                line_color=next(colors),
-                legend_label=self.query.receiverType[each_idx],
+                each.v,
+                color=next(colors),
+                label=self.query.receiverType[each_idx],
             )
-            fig.xaxis[0].axis_label = "s [km]"
-            fig.yaxis[0].axis_label = "Altitude [m]"
-            fig.toolbar_location = None
-        export_png(fig, filename=os.path.join(graphPath, "raw_alt.png"))
+            ax.set(
+                xlabel="s [km]",
+                ylabel="Altitude [m]",
+            )
+            pyplot.savefig(os.path.join(graphPath, "raw_alt.png"), dpi=400)
 
-        colors = itertools.cycle(palette)
-        fig = plt.figure(plot_width=700, plot_height=400)
+        colors = iter(palette)
+        fig, ax = pyplot.subplots(1, 1, dpi=400, figsize=(16, 9))
         for each_idx, each in enumerate(self.condRealizations):
-            fig.line(
+            ax.grid(True)
+            ax.plot(
                 each.s,
-                each.alt,
-                line_color=next(colors),
-                legend_label=self.query.receiverType[each_idx],
+                each.v,
+                color=next(colors),
+                label=self.query.receiverType[each_idx],
             )
-            fig.xaxis[0].axis_label = "s [km]"
-            fig.yaxis[0].axis_label = "Altitude [m]"
-            fig.toolbar_location = None
-        export_png(fig, filename=os.path.join(graphPath, "cond_alt.png"))
+            ax.set(
+                xlabel="s [km]",
+                ylabel="Altitude [m]",
+            )
+            pyplot.savefig(os.path.join(graphPath, "cond_alt.png"), dpi=400)
 
         print("Altitude plotted.")
 
     def speedGraph(self, graphPath):
         """Plot speed."""
 
-        colors = itertools.cycle(palette)
-        fig = plt.figure(plot_width=700, plot_height=400)
+        colors = iter(palette)
+        fig, ax = pyplot.subplots(1, 1, dpi=400, figsize=(16, 9))
         for each_idx, each in enumerate(self.rawRealizations):
-            fig.line(
+            ax.grid(True)
+            ax.plot(
                 each.s,
                 each.v,
-                line_color=next(colors),
-                legend_label=self.query.receiverType[each_idx],
+                color=next(colors),
+                label=self.query.receiverType[each_idx],
             )
-            fig.xaxis[0].axis_label = "s [km]"
-            fig.yaxis[0].axis_label = "Speed [km/h]"
-            fig.toolbar_location = None
-        export_png(fig, filename=os.path.join(graphPath, "raw_speed.png"))
+            ax.set(
+                xlabel="s [km]",
+                ylabel="Speed [km/h]",
+            )
+            pyplot.savefig(os.path.join(graphPath, "raw_speed.png"), dpi=400)
 
-        colors = itertools.cycle(palette)
-        fig = plt.figure(plot_width=700, plot_height=400)
+        colors = iter(palette)
+        fig, ax = pyplot.subplots(1, 1, dpi=400, figsize=(16, 9))
         for each_idx, each in enumerate(self.condRealizations):
-            fig.line(
+            ax.grid(True)
+            ax.plot(
                 each.s,
                 each.v,
-                line_color=next(colors),
-                legend_label=self.query.receiverType[each_idx],
+                color=next(colors),
+                label=self.query.receiverType[each_idx],
             )
-            fig.xaxis[0].axis_label = "s [km]"
-            fig.yaxis[0].axis_label = "Speed [km/h]"
-            fig.toolbar_location = None
-        export_png(fig, filename=os.path.join(graphPath, "cond_speed.png"))
+            ax.set(
+                xlabel="s [km]",
+                ylabel="Speed [km/h]",
+            )
+            pyplot.savefig(os.path.join(graphPath, "cond_speed.png"), dpi=400)
         print("Speed plotted.")
 
     def accuracyGraph(self, graphPath):
@@ -374,40 +375,33 @@ class Realizations:
         cols = ["pdop", "hdop", "vdop", "nSAT"]
 
         for each_idx, each in enumerate(self.rawRealizations):
-            colors = itertools.cycle(palette)
-            fig = plt.figure(plot_width=350, plot_height=200)
+            colors = iter(palette)
+            fig, ax = pyplot.subplots(1, 1, dpi=400, figsize=(16, 9))
             for col_idx, col in enumerate(cols):
-                fig.line(
-                    each.s,
-                    each[col],
-                    line_color=next(colors),
-                    legend_label=col,
+                ax.plot(each.t, each[col], color=next(colors), label=col)
+                ax.grid(True)
+                ax.set(
+                    title=f"Raw data recorded with {self.query.receiverType[each_idx]}",
+                    xlabel="t [s]",
                 )
-                fig.xaxis[0].axis_label = "s [km]"
-                fig.toolbar_location = None
-            export_png(
-                fig,
-                filename=os.path.join(
-                    graphPath, "raw_dop_" + str(each_idx) + ".png"),
-            )
+                ax.legend(loc='upper center', ncol=4)
+            pyplot.savefig(os.path.join(
+                graphPath, "raw_dop_" + str(each_idx) + ".png"), dpi=400)
 
         for each_idx, each in enumerate(self.condRealizations):
-            colors = itertools.cycle(palette)
-            fig = plt.figure(plot_width=350, plot_height=200)
+            colors = iter(palette)
+            fig, ax = pyplot.subplots(1, 1, dpi=400, figsize=(16, 9))
             for col_idx, col in enumerate(cols):
-                fig.line(
-                    each.s,
-                    each[col],
-                    line_color=next(colors),
-                    legend_label=col,
+                ax.plot(each.t, each[col], color=next(colors), label=col)
+                ax.grid(True)
+                ax.set(
+                    title=f"Conditioned data recorded with {self.query.receiverType[each_idx]}",
+                    xlabel="t [s]",
                 )
-                fig.xaxis[0].axis_label = "s [km]"
-                fig.toolbar_location = None
-            export_png(
-                fig,
-                filename=os.path.join(
-                    graphPath, "cond_dop_" + str(each_idx) + ".png"),
-            )
+                ax.legend(loc='upper center', ncol=4)
+            pyplot.savefig(os.path.join(
+                graphPath, "cond_dop_" + str(each_idx) + ".png"), dpi=400)
+
         print("xDOP plotted.")
 
     def mapGraph(self, graphPath):
@@ -421,7 +415,7 @@ class Realizations:
         latitude /= length
         longitude /= length
 
-        colors = itertools.cycle(palette)
+        colors = iter(palette)
         myMap = folium.Map(
             location=[latitude, longitude], tiles="CartoDB positron")
         for track_idx, track in enumerate(self.rawRealizations):
@@ -431,7 +425,7 @@ class Realizations:
             ).add_to(myMap)
         myMap.save(os.path.join(graphPath, "map_raw.html"))
 
-        colors = itertools.cycle(palette)
+        colors = iter(palette)
         myMap = folium.Map(
             location=[latitude, longitude], tiles="CartoDB positron")
         for track_idx, track in enumerate(self.condRealizations):
@@ -547,10 +541,7 @@ class Realizations:
         print("Route statistics plotted.")
 
     def copyFiles(self, graphPath, destPath, tag):
-        try:
-            [os.remove(os.path.join(destPath, f)) for f in os.listdir(
-                destPath) if os.path.isfile(os.path.join(destPath, f))]
-        except FileNotFoundError:
+        if not os.path.exists(destPath):
             os.makedirs(destPath)
         [copy(graphPath + f, destPath + os.path.splitext(f)[0] + tag + os.path.splitext(f)[1])
          for f in os.listdir(graphPath) if os.path.isfile(os.path.join(graphPath, f))]

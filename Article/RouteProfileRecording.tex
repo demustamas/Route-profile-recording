@@ -101,7 +101,7 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 		      	   \caption{Gadget 2}
 		      	   \label{fig:gadget2}
 		     	\end{subfigure}
-		      \caption{Gadget 2}
+		      \caption{Gadgets used for recording route profiles}
 		      \label{fig:gadgets}
 			\end{figure}		
 			\begin{table}[h]
@@ -175,6 +175,59 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 			An overview on the number of satellites used for the data recording and the resulting DOP values presented for assessing the achieved accuracy and to allow comparison with different GNSS positioning results.
 	\section{Results}
 		\subsection{Static test}
+			\begin{figure}[h]
+		   		\centering
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      		\centering
+		      	  	\includegraphics[width=\textwidth]{Static/raw_static_0.png}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      	   \centering
+		      	   \includegraphics[width=\textwidth]{Static/cond_static_0.png}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      		\centering
+		      	  	\includegraphics[width=\textwidth]{Static/raw_static_1.png}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      	   \centering
+		      	   \includegraphics[width=\textwidth]{Static/cond_static_1.png}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      		\centering
+		      	  	\includegraphics[width=\textwidth]{Static/raw_static_2.png}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      	   \centering
+		      	   \includegraphics[width=\textwidth]{Static/cond_static_2.png}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      		\centering
+		      	  	\includegraphics[width=\textwidth]{Static/raw_dop_0.png}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      	   \centering
+		      	   \includegraphics[width=\textwidth]{Static/cond_dop_0.png}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      		\centering
+		      	  	\includegraphics[width=\textwidth]{Static/raw_dop_1.png}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      	   \centering
+		      	   \includegraphics[width=\textwidth]{Static/cond_dop_1.png}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      		\centering
+		      	  	\includegraphics[width=\textwidth]{Static/raw_dop_2.png}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      	   \centering
+		      	   \includegraphics[width=\textwidth]{Static/cond_dop_2.png}
+		     	\end{subfigure}
+		      \caption{Recordings of static measurement}
+		      \label{fig:static_plots}
+			\end{figure}		
 		\subsection{Dynamic test}
 		\subsection{Position measurements}
 			A single route profile for the assessment is selected starting at Füzesabony station, heading to Budapest-Keleti station. The route section in this case starts at the plain section then approaching the hilly area of Gödöllő and arriving to the urban area of Budapest. The location raw and conditioned data is presented on Figure \ref{fig:raw_map} and Figure \ref{fig:cond_map} respectively. It can be seen that the raw data provided a good tracking of the position over the full route profile. The iPhone location data were not so accurate as the recordings with Gadget 1, especially on the second section at Gödöllő Hills. After data cleansing and filtering as the less accurate points were removed the location of the iPhone show larger deviation compared to the recordings of Gadget 1. Both for the iPhone and Gadget 1 the first and third section, the urban area and the plain area respectively resulted in a comparable tracking of the location with limited differences of the location information. The receivers found the satellite signals in a couple of minutes and there was no loss of signal experienced.

@@ -23,7 +23,7 @@ import os
 
 database_dir = "Database/"
 database_name = "GNSS recordings.db"
-working_dir = "Static/"
+working_dir = "Results/Static/"
 
 sql_query = """SELECT * 
     FROM listOfRecordings 
@@ -42,7 +42,7 @@ sql_query = """SELECT *
 
 """PATH"""
 database_path = os.path.join(database_dir, database_name)
-workingdir_path = os.path.join(database_dir, working_dir)
+workingdir_path = working_dir
 
 if not os.path.exists(workingdir_path):
     os.makedirs(workingdir_path)
