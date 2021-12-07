@@ -22,6 +22,7 @@ from bokeh.models import (
 )
 
 from matplotlib import pyplot
+from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 import itertools
 
 import os
@@ -37,7 +38,9 @@ station_dir = "Stations/"
 graph_dir = "Graphs/"
 destination_dir = "ToCopy/"
 name_tag = ""
-palette = pyplot.cm.tab10(range(10))
+palette = pyplot.cm.tab10
+palette = palette(range(palette.N))
+pyplot.style.use('graph.mplstyle')
 
 """PATH"""
 
@@ -151,20 +154,13 @@ class Realizations:
             R_2D_2DRMS = 2 * np.sqrt(std_x ** 2 + std_y ** 2)
             R_3D_2DRMS = 2 * np.sqrt(std_x ** 2 + std_y ** 2 + std_z ** 2)
 
-            fig, ax = pyplot.subplots(
-                1,
-                2,
-                dpi=400,
-                figsize=(16, 9),
-                gridspec_kw={"width_ratios": [5, 1]},
-                sharey=True,
-            )
-            ax[0].scatter(
+            fig, ax = pyplot.subplots(1, 1)
+            ax.plot(
                 dist_x,
                 dist_y,
                 color=palette[0],
-                s=1,
                 marker=".",
+                linestyle="",
                 label="Recorded positions",
             )
             circle_2D = pyplot.Circle(
@@ -181,33 +177,35 @@ class Realizations:
                 fill=False,
                 label="2DRMS (3D): " + "{0:1.2f}".format(R_3D_2DRMS) + " m",
             )
-            ax[0].add_patch(circle_2D)
-            ax[0].add_patch(circle_3D)
-            ax[0].set(
+            ax.add_patch(circle_2D)
+            ax.add_patch(circle_3D)
+            ax.set(
                 xlabel="Longitudinal distance [m]",
                 ylabel="Lateral distance [m]",
                 aspect="equal",
                 adjustable="datalim",
             )
-            ax[0].legend()
-            ax[1].scatter(
+            ax.legend(ncol=3)
+            ax_divider = make_axes_locatable(ax)
+            ax_div = ax_divider.append_axes("right", size="7%", pad="10%")
+
+            ax_div.plot(
                 each.index,
                 dist_z,
                 color=palette[0],
-                s=1,
                 marker=".",
+                linestyle="",
                 label="Recorded altitude",
             )
-            ax[1].axhline(R_3D_2DRMS, color="green")
-            ax[1].axhline(-R_3D_2DRMS, color="green")
-            ax[1].set(ylabel="Vertical distance [m]", xticks=[])
-            ax[1].yaxis.set_tick_params(labelleft=True)
+            ax_div.axhline(R_3D_2DRMS, color="green")
+            ax_div.axhline(-R_3D_2DRMS, color="green")
+            ax_div.set(ylabel="Vertical distance [m]", xticks=[])
+            ax_div.yaxis.set_tick_params(labelleft=True)
             fig.suptitle(
                 f"Raw data recorded with {self.query.receiverType.iloc[each_idx]}")
             pyplot.savefig(
                 os.path.join(graphPath, "raw_static_" +
                              str(each_idx) + ".png"),
-                dpi=400,
             )
         for each_idx, each in enumerate(self.condRealizations):
             mean_x = each.lat.mean()
@@ -237,20 +235,13 @@ class Realizations:
             std_z = dist_z.std()
             R_2D_2DRMS = 2 * np.sqrt(std_x ** 2 + std_y ** 2)
             R_3D_2DRMS = 2 * np.sqrt(std_x ** 2 + std_y ** 2 + std_z ** 2)
-            fig, ax = pyplot.subplots(
-                1,
-                2,
-                dpi=400,
-                figsize=(16, 9),
-                gridspec_kw={"width_ratios": [5, 1]},
-                sharey=True,
-            )
-            ax[0].scatter(
+            fig, ax = pyplot.subplots(1, 1)
+            ax.plot(
                 dist_x,
                 dist_y,
                 color=palette[0],
-                s=1,
                 marker=".",
+                linestyle="",
                 label="Recorded positions",
             )
             circle_2D = pyplot.Circle(
@@ -267,33 +258,35 @@ class Realizations:
                 fill=False,
                 label="2DRMS (3D): " + "{0:1.2f}".format(R_3D_2DRMS) + " m",
             )
-            ax[0].add_patch(circle_2D)
-            ax[0].add_patch(circle_3D)
-            ax[0].set(
+            ax.add_patch(circle_2D)
+            ax.add_patch(circle_3D)
+            ax.set(
                 xlabel="Longitudinal distance [m]",
                 ylabel="Lateral distance [m]",
                 aspect="equal",
                 adjustable="datalim",
             )
-            ax[0].legend()
-            ax[1].scatter(
+            ax.legend(ncol=3)
+            ax_divider = make_axes_locatable(ax)
+            ax_div = ax_divider.append_axes("right", size="7%", pad="10%")
+
+            ax_div.plot(
                 each.index,
                 dist_z,
                 color=palette[0],
-                s=1,
                 marker=".",
+                linestyle="",
                 label="Recorded altitude",
             )
-            ax[1].axhline(R_3D_2DRMS, color="green")
-            ax[1].axhline(-R_3D_2DRMS, color="green")
-            ax[1].set(ylabel="Vertical distance [m]", xticks=[])
-            ax[1].yaxis.set_tick_params(labelleft=True)
+            ax_div.axhline(R_3D_2DRMS, color="green")
+            ax_div.axhline(-R_3D_2DRMS, color="green")
+            ax_div.set(ylabel="Vertical distance [m]", xticks=[])
+            ax_div.yaxis.set_tick_params(labelleft=True)
             fig.suptitle(
                 f"Conditioned data recorded with {self.query.receiverType.iloc[each_idx]}")
             pyplot.savefig(
                 os.path.join(graphPath, "cond_static_" +
-                             str(each_idx) + ".png"),
-                dpi=400,
+                             str(each_idx) + ".png")
             )
         print("Static graph plotted.")
 
@@ -301,9 +294,8 @@ class Realizations:
         """Create altitude graph."""
 
         colors = iter(palette)
-        fig, ax = pyplot.subplots(1, 1, dpi=400, figsize=(16, 9))
+        fig, ax = pyplot.subplots(1, 1)
         for each_idx, each in enumerate(self.rawRealizations):
-            ax.grid(True)
             ax.plot(
                 each.s,
                 each.v,
@@ -314,12 +306,11 @@ class Realizations:
                 xlabel="s [km]",
                 ylabel="Altitude [m]",
             )
-            pyplot.savefig(os.path.join(graphPath, "raw_alt.png"), dpi=400)
+            pyplot.savefig(os.path.join(graphPath, "raw_alt.png"))
 
         colors = iter(palette)
-        fig, ax = pyplot.subplots(1, 1, dpi=400, figsize=(16, 9))
+        fig, ax = pyplot.subplots(1, 1)
         for each_idx, each in enumerate(self.condRealizations):
-            ax.grid(True)
             ax.plot(
                 each.s,
                 each.v,
@@ -330,7 +321,7 @@ class Realizations:
                 xlabel="s [km]",
                 ylabel="Altitude [m]",
             )
-            pyplot.savefig(os.path.join(graphPath, "cond_alt.png"), dpi=400)
+            pyplot.savefig(os.path.join(graphPath, "cond_alt.png"))
 
         print("Altitude plotted.")
 
@@ -338,9 +329,8 @@ class Realizations:
         """Plot speed."""
 
         colors = iter(palette)
-        fig, ax = pyplot.subplots(1, 1, dpi=400, figsize=(16, 9))
+        fig, ax = pyplot.subplots(1, 1)
         for each_idx, each in enumerate(self.rawRealizations):
-            ax.grid(True)
             ax.plot(
                 each.s,
                 each.v,
@@ -351,12 +341,11 @@ class Realizations:
                 xlabel="s [km]",
                 ylabel="Speed [km/h]",
             )
-            pyplot.savefig(os.path.join(graphPath, "raw_speed.png"), dpi=400)
+            pyplot.savefig(os.path.join(graphPath, "raw_speed.png"))
 
         colors = iter(palette)
-        fig, ax = pyplot.subplots(1, 1, dpi=400, figsize=(16, 9))
+        fig, ax = pyplot.subplots(1, 1)
         for each_idx, each in enumerate(self.condRealizations):
-            ax.grid(True)
             ax.plot(
                 each.s,
                 each.v,
@@ -367,7 +356,7 @@ class Realizations:
                 xlabel="s [km]",
                 ylabel="Speed [km/h]",
             )
-            pyplot.savefig(os.path.join(graphPath, "cond_speed.png"), dpi=400)
+            pyplot.savefig(os.path.join(graphPath, "cond_speed.png"))
         print("Speed plotted.")
 
     def accuracyGraph(self, graphPath):
@@ -376,31 +365,29 @@ class Realizations:
 
         for each_idx, each in enumerate(self.rawRealizations):
             colors = iter(palette)
-            fig, ax = pyplot.subplots(1, 1, dpi=400, figsize=(16, 9))
+            fig, ax = pyplot.subplots(1, 1)
             for col_idx, col in enumerate(cols):
                 ax.plot(each.t, each[col], color=next(colors), label=col)
-                ax.grid(True)
                 ax.set(
                     title=f"Raw data recorded with {self.query.receiverType[each_idx]}",
                     xlabel="t [s]",
                 )
-                ax.legend(loc='upper center', ncol=4)
+                ax.legend(ncol=len(cols))
             pyplot.savefig(os.path.join(
-                graphPath, "raw_dop_" + str(each_idx) + ".png"), dpi=400)
+                graphPath, "raw_dop_" + str(each_idx) + ".png"))
 
         for each_idx, each in enumerate(self.condRealizations):
             colors = iter(palette)
-            fig, ax = pyplot.subplots(1, 1, dpi=400, figsize=(16, 9))
+            fig, ax = pyplot.subplots(1, 1)
             for col_idx, col in enumerate(cols):
                 ax.plot(each.t, each[col], color=next(colors), label=col)
-                ax.grid(True)
                 ax.set(
                     title=f"Conditioned data recorded with {self.query.receiverType[each_idx]}",
                     xlabel="t [s]",
                 )
-                ax.legend(loc='upper center', ncol=4)
+                ax.legend(ncol=len(cols))
             pyplot.savefig(os.path.join(
-                graphPath, "cond_dop_" + str(each_idx) + ".png"), dpi=400)
+                graphPath, "cond_dop_" + str(each_idx) + ".png"))
 
         print("xDOP plotted.")
 

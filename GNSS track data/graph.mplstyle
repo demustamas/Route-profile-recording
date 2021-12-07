@@ -1,0 +1,5 @@
+figure.dpi:         400
+figure.figsize:     16, 9
+figure.autolayout:  True
+axes.grid:          True
+legend.loc:         upper center
