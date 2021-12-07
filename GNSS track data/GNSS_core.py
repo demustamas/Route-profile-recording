@@ -23,11 +23,12 @@ import os
 
 database_dir = "Database/"
 database_name = "GNSS recordings.db"
-working_dir = "Results/Static/"
+working_dir = "Results/Dynamic2/"
 
 sql_query = """SELECT * 
     FROM listOfRecordings 
-    WHERE recType = 'static'
+    WHERE recType = 'dynamic'
+    AND fromStation = 'B'
     """
 
 """SELECT * 
@@ -39,6 +40,8 @@ sql_query = """SELECT *
     AND trainType = ''
     AND receiverType = ''
     """
+
+pyplot.style.use('graph.mplstyle')
 
 """PATH"""
 database_path = os.path.join(database_dir, database_name)
@@ -127,7 +130,7 @@ class Realizations:
                 for _ in np.arange(N_iter):
                     each_centered = (
                         each[col]
-                        - each[col].rolling(100, center=True,
+                        - each[col].rolling(50, center=True,
                                             min_periods=1).mean()
                     )
                     z = np.abs(stats.zscore(each_centered))
@@ -152,12 +155,15 @@ class Realizations:
 
         cols = ['alt', 'v']
         for idx, each in enumerate(self.rawRealizations):
-            fig, ax = pyplot.subplots(2, 2, dpi=400, figsize=(16, 9))
+            fig, ax = pyplot.subplots(2, 2)
             fig.suptitle(each['Track name'].iloc[0])
             for col_idx, col in enumerate(cols):
-                ax[col_idx, 0].plot(each.s, each[col], color='green')
+                ax[col_idx, 0].plot(each.s, each[col],
+                                    color='green', label=col)
                 ax[col_idx, 1].plot(self.condRealizations[idx].s,
-                                    self.condRealizations[idx][col], color='blue')
+                                    self.condRealizations[idx][col], color='blue', label=col)
+                ax[col_idx, 0].legend()
+                ax[col_idx, 1].legend()
 
         print("\nData conditioning performed.\n")
 
@@ -259,11 +265,11 @@ class Realizations:
         self.sumRealization = df
 
         for col in cols:
-            fig, ax = pyplot.subplots(dpi=400, figsize=(16, 9))
+            fig, ax = pyplot.subplots(1, 1)
             for idx, each in enumerate(self.condRealizations):
                 ax.plot(each.s, each[col],
                         label=self.query.receiverType.iloc[idx])
-                ax.legend()
+                ax.legend(ncol=3)
 
         print("\nData aggregation completed.\n")
 
@@ -326,5 +332,4 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
-"""EOF"""
 """EOF"""

@@ -1,5 +1,11 @@
 figure.dpi:         400
-figure.figsize:     16, 9
+figure.figsize:     3, 2
 figure.autolayout:  True
 axes.grid:          True
-legend.loc:         upper center
+legend.loc:         best
+font.family:        serif
+font.size:          5
+axes.labelsize:     5
+legend.fontsize:    5
+xtick.labelsize:    4
+ytick.labelsize:    4

@@ -82,7 +82,7 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 				\label{fig:line_no80}
 			\end{figure}
 		\subsection{Measurement devices}
-			Three devices were used to carry out the measurements: a mobile phone and two self-made electronics based on the ARDUINO platform but with different GNSS receivers. \\
+			Three devices were used to carry out the measurements: a mobile phone and two self-made electronics based on the ARDUINO platform equipped with different GNSS receivers. \\
 			The mobile phone type is iPhone 11 Pro with iOS 14 operating system. The application Trail Tracker 1.3.4 was used for the measurements. There is no detailed information available on the type of GNSS receiver used, however from the recorded data we can deduct that the sampling frequency is 1 Hz when a satellite fix is found and multi-mode operation is enabled. The app records and stores the data in GPX format \cite{GPXSchemaDocumentation} that is later used for processing off-line. \\
 			The first self-made equipment (Gadget 1) is built from an ARDUINO UNO motherboard and the NEO-M8N receiver made by U-Blox \cite{NEOM8SeriesUblox} and is shown on Figure \ref{fig:gadget1}. An active GNSS antenna is connected to the receiver. The data is recorded to an SD card. The power supply for Gadget 1 is a high-capacity power bank to allow numerous and long test runs. The algorithm for the tool is developed in the ARDUINO IDE environment. It starts by initializing the communication on the serial port, with the receiver and with the SD card. The setup of the GNSS receiver is set to 5 Hz sampling rate and the NMEA messages are disabled. The UBX protocol \cite{UbloxUbloxM82021} is used for the communication between the receiver and motherboard. The UBX-NAV-PVT message is used for transmitting the GNSS information from the receiver that is sent out with a 5 Hz rate. This solution provides general navigation, position, velocity and time information. The messages then parsed by the software and the recorded information is written to the SD card line by line. \\
 			The second tool (Gadget 2) is also based on an ARDUINO UNO motherboard but with a combination of an MT 3339 GNSS receiver made by MediaTek Labs \cite{MT3339MediaTekLabs}. The receiver has an active antenna attached. The power supply is solved by the same high-capacity power bank and the data is also recorded to an SD card. In this case the GNSS receiver and the SD card was available in an integrated shield design \cite{OverviewAdafruitUltimate} resulting in a simpler design of the electronics. Gadget 2 is presented on Figure \ref{fig:gadget2}. The software is written in the ARDUINO IDE environment, for the communication the NMEA messages, more precisely the \$GPGGA and \$GPRMC sentences were used which were parsed with 10 Hz sampling rate by the TinyGPSPlus parser \cite{TinyGPSArduiniana} that is freely available. The parsed data was saved to the SD card line-by-line. \\
@@ -179,56 +179,83 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 		   		\centering
 		     	\begin{subfigure}[b]{0.45\textwidth}
 		      		\centering
-		      	  	\includegraphics[width=\textwidth]{Static/raw_static_0.png}
+		      	  	\includegraphics[width=\textwidth]{Static/raw_static_IPhone 11 Pro.png}
+		      	  	\caption{Raw data}
 		     	\end{subfigure}
 		     	\begin{subfigure}[b]{0.45\textwidth}
 		      	   \centering
-		      	   \includegraphics[width=\textwidth]{Static/cond_static_0.png}
+		      	   \includegraphics[width=\textwidth]{Static/cond_static_IPhone 11 Pro.png}
+		      	   \caption{Conditioned data}
 		     	\end{subfigure}
+		     	
+		      \caption{Position recording of iPhone 11 Pro}
+		      \label{fig:static_loc_iPhone}
+			\end{figure}		
+			\begin{figure}[h]
+		   		\centering
 		     	\begin{subfigure}[b]{0.45\textwidth}
 		      		\centering
-		      	  	\includegraphics[width=\textwidth]{Static/raw_static_1.png}
+		      	  	\includegraphics[width=\textwidth]{Static/raw_static_U-blox M8N.png}
+		      	  	\caption{Raw data}
 		     	\end{subfigure}
 		     	\begin{subfigure}[b]{0.45\textwidth}
 		      	   \centering
-		      	   \includegraphics[width=\textwidth]{Static/cond_static_1.png}
+		      	   \includegraphics[width=\textwidth]{Static/cond_static_U-blox M8N.png}
+		      	   \caption{Conditioned data}
 		     	\end{subfigure}
+		     	
+		      \caption{Position recording of Gadget 1}
+		      \label{fig:static_loc_gadget1}
+			\end{figure}		
+			\begin{figure}[h]
+		   		\centering
 		     	\begin{subfigure}[b]{0.45\textwidth}
 		      		\centering
-		      	  	\includegraphics[width=\textwidth]{Static/raw_static_2.png}
+		      	  	\includegraphics[width=\textwidth]{Static/raw_static_MTK 3339.png}
+		      	  	\caption{Raw data}
 		     	\end{subfigure}
 		     	\begin{subfigure}[b]{0.45\textwidth}
 		      	   \centering
-		      	   \includegraphics[width=\textwidth]{Static/cond_static_2.png}
+		      	   \includegraphics[width=\textwidth]{Static/cond_static_MTK 3339.png}
+		      	   \caption{Conditioned data}
 		     	\end{subfigure}
-		     	\begin{subfigure}[b]{0.45\textwidth}
-		      		\centering
-		      	  	\includegraphics[width=\textwidth]{Static/raw_dop_0.png}
-		     	\end{subfigure}
-		     	\begin{subfigure}[b]{0.45\textwidth}
-		      	   \centering
-		      	   \includegraphics[width=\textwidth]{Static/cond_dop_0.png}
-		     	\end{subfigure}
-		     	\begin{subfigure}[b]{0.45\textwidth}
-		      		\centering
-		      	  	\includegraphics[width=\textwidth]{Static/raw_dop_1.png}
-		     	\end{subfigure}
-		     	\begin{subfigure}[b]{0.45\textwidth}
-		      	   \centering
-		      	   \includegraphics[width=\textwidth]{Static/cond_dop_1.png}
-		     	\end{subfigure}
-		     	\begin{subfigure}[b]{0.45\textwidth}
-		      		\centering
-		      	  	\includegraphics[width=\textwidth]{Static/raw_dop_2.png}
-		     	\end{subfigure}
-		     	\begin{subfigure}[b]{0.45\textwidth}
-		      	   \centering
-		      	   \includegraphics[width=\textwidth]{Static/cond_dop_2.png}
-		     	\end{subfigure}
-		      \caption{Recordings of static measurement}
-		      \label{fig:static_plots}
+		     	
+		      \caption{Position recording of Gadget 2}
+		      \label{fig:static_loc_gadget2}
 			\end{figure}		
 		\subsection{Dynamic test}
+			\begin{figure}[h]
+		   		\centering
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      		\centering
+		      	  	\includegraphics[width=\textwidth]{Dynamic/raw_speed.png}
+		      	  	\caption{Raw data}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      	   \centering
+		      	   \includegraphics[width=\textwidth]{Dynamic/cond_speed.png}
+		      	   \caption{Conditioned data}
+		     	\end{subfigure}
+		     	
+		      \caption{Speed recordings of the receivers during dynamic testing}
+		      \label{fig:static_loc_iPhone}
+			\end{figure}		
+			\begin{figure}[h]
+		   		\centering
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      		\centering
+		      	  	\includegraphics[width=\textwidth]{Dynamic/raw_alt.png}
+		      	  	\caption{Raw data}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      	   \centering
+		      	   \includegraphics[width=\textwidth]{Dynamic/cond_alt.png}
+		      	   \caption{Conditioned data}
+		     	\end{subfigure}
+		     	
+		      \caption{Altitude recordings of the receivers during dynamic testing}
+		      \label{fig:static_loc_gadget1}
+			\end{figure}	
 		\subsection{Position measurements}
 			A single route profile for the assessment is selected starting at Füzesabony station, heading to Budapest-Keleti station. The route section in this case starts at the plain section then approaching the hilly area of Gödöllő and arriving to the urban area of Budapest. The location raw and conditioned data is presented on Figure \ref{fig:raw_map} and Figure \ref{fig:cond_map} respectively. It can be seen that the raw data provided a good tracking of the position over the full route profile. The iPhone location data were not so accurate as the recordings with Gadget 1, especially on the second section at Gödöllő Hills. After data cleansing and filtering as the less accurate points were removed the location of the iPhone show larger deviation compared to the recordings of Gadget 1. Both for the iPhone and Gadget 1 the first and third section, the urban area and the plain area respectively resulted in a comparable tracking of the location with limited differences of the location information. The receivers found the satellite signals in a couple of minutes and there was no loss of signal experienced.
 			\begin{figure}[h]
@@ -283,6 +310,34 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 		   		\centering
 		     	\begin{subfigure}[b]{0.45\textwidth}
 		      		\centering
+		      	   \includegraphics[width=\textwidth]{Dynamic/cond_dop_U-blox M8N.png}
+		      	   \caption{Gadget 1}
+		      	   \label{fig:iPhone_raw_dop}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      	   \centering
+		      	   \includegraphics[width=\textwidth]{Dynamic/cond_dop_MTK 3339.png}
+		      	   \caption{Gadget 2}
+		      	   \label{fig:iPhone_cond_dop}
+		     	\end{subfigure}
+		      \caption{DOP and number of satellites - dynamic testing}
+		      \label{fig:iPhone_dop}
+			\end{figure}
+			\begin{figure}[h]
+		   		\centering
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      		\centering
+		      	   \includegraphics[width=\textwidth]{Dynamic/cond_dop_IPhone 11 Pro.png}
+		      	   \caption{Raw data}
+		      	   \label{fig:iPhone_raw_dop}
+		     	\end{subfigure}
+		      \label{fig:iPhone_dop}
+			\end{figure}
+			
+			\begin{figure}[h]
+		   		\centering
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      		\centering
 		      	   \includegraphics[width=\textwidth]{raw_dop_0.png}
 		      	   \caption{Raw data}
 		      	   \label{fig:iPhone_raw_dop}
@@ -293,7 +348,7 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 		      	   \caption{Conditioned data}
 		      	   \label{fig:iPhone_cond_dop}
 		     	\end{subfigure}
-		      \caption{iPhone 11 Pro - DOP and number of satellites}
+		      \caption{iPhone 11 Pro - DOP and number of satellites - route profile}
 		      \label{fig:iPhone_dop}
 			\end{figure}
 			\begin{figure}[h]
@@ -310,10 +365,9 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 		      	   \caption{Conditioned data}
 		      	   \label{fig:Gadget1_cond_dop}
 		     	\end{subfigure}
-		      \caption{Gadget 1 - DOP and number of satellites}
+		      \caption{Gadget 1 - DOP and number of satellites - route profile}
 		      \label{fig:Gadget1_dop}
 			\end{figure}
-		\subsection{Aggregated figures}
 	\section{Discussion}
 		The comparison of the recorded datasets shows in general that the Gadget 1 is providing more accurate positioning and speed information than the iPhone 11 Pro. This is confirmed by the geographical location as no differences can be seen on the Gadget 1 compared to the railway tracks than the location provided by the iPhone. Although the deviation to the exact railway track trajectory is not quantified as no information is available that would allow this, the comparison with Google Maps and the continuity of the trajectory supports this observation. \\
 		On the other hand contradictory results obtained from the altitude data as the iPhone show much more accurate values than the Gadget 1. A deeper analysis is done on this issue because higher inaccuracy is expected on the altitude data than on the latitude and longitude position. Extracting the elevation information from central database based on the latitude and longitude positions show that the height information from a central database \cite{GPSVisualizerAssign} corresponds to the iPhone recordings. This raises the assumption that during recording the iPhone solution connects to a central database via GSM to obtain more accurate altitude information. \\ 
