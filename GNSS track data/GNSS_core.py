@@ -23,12 +23,15 @@ import os
 
 database_dir = "Database/"
 database_name = "GNSS recordings.db"
-working_dir = "Results/Dynamic2/"
+working_dir = "Results/Route/"
 
 sql_query = """SELECT * 
     FROM listOfRecordings 
-    WHERE recType = 'dynamic'
-    AND fromStation = 'B'
+    WHERE recType = 'route'
+    AND fromStation = 'Füzesabony'
+    AND toStation = 'Keleti'
+    AND trainType = 'IR'
+    AND dateTime = '2021/10/17 17:08:19'
     """
 
 """SELECT * 
@@ -58,7 +61,7 @@ def main():
 
     Model.queryRealizations(database_path, sql_query)
     Model.conditionRealization()
-    Model.aggregateRealization(fit_curves=False)
+    Model.aggregateRealization(fit_curves=True)
     Model.averageRealization()
     Model.saveToDatabase(workingdir_path)
 

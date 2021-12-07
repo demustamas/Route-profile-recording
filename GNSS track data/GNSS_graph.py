@@ -64,13 +64,13 @@ def main():
     # Model.generateStations(station_path)
     Model.queryRealizations(working_path)
     # Model.staticGraph(graph_path)
-    Model.altitudeGraph(graph_path)
+    # Model.altitudeGraph(graph_path)
     Model.speedGraph(graph_path)
-    Model.accuracyGraph(graph_path)
+    # Model.accuracyGraph(graph_path)
     # Model.mapGraph(graph_path)
     # Model.characteristicsGraph(graph_path)
     # Model.statisticGraph(graph_path)
-    Model.copyFiles(graph_path, destination_path, name_tag)
+    # Model.copyFiles(graph_path, destination_path, name_tag)
 
 
 """Simulation model"""
@@ -341,7 +341,16 @@ class Realizations:
 
         colors = iter(palette)
         fig, ax = pyplot.subplots(1, 1)
+        v_tresh = np.arange(60, 130, 10)
         for each_idx, each in enumerate(self.rawRealizations):
+            for i in range(len(v_tresh)-1):
+                v_step = each.v[(each.v > v_tresh[i])
+                                & (each.v < v_tresh[i+1])].mean()
+                sigma_step = each.v[(each.v > v_tresh[i])
+                                    & (each.v < v_tresh[i+1])].std()
+                print(
+                    f"{v_tresh[i]:5d}{v_tresh[i+1]:5d}{v_step:9.2f}{sigma_step:9.4f}\t\t{self.query.receiverType[each_idx]}")
+
             ax.plot(
                 each.s,
                 each.v,
@@ -358,6 +367,14 @@ class Realizations:
         colors = iter(palette)
         fig, ax = pyplot.subplots(1, 1)
         for each_idx, each in enumerate(self.condRealizations):
+            for i in range(len(v_tresh)-1):
+                v_step = each.v[(each.v > v_tresh[i])
+                                & (each.v < v_tresh[i+1])].mean()
+                sigma_step = each.v[(each.v > v_tresh[i])
+                                    & (each.v < v_tresh[i+1])].std()
+                print(
+                    f"{v_tresh[i]:5d}{v_tresh[i+1]:5d}{v_step:9.2f}{sigma_step:9.4f}\t\t{self.query.receiverType[each_idx]}")
+
             ax.plot(
                 each.s,
                 each.v,
@@ -380,9 +397,9 @@ class Realizations:
             colors = iter(palette)
             fig, ax = pyplot.subplots(1, 1)
             for col_idx, col in enumerate(cols):
-                ax.plot(each.t, each[col], color=next(colors), label=col)
+                ax.plot(each.s, each[col], color=next(colors), label=col)
                 ax.set(
-                    xlabel="t [s]",
+                    xlabel="s [km]",
                 )
                 ax.legend(ncol=len(cols))
             pyplot.savefig(os.path.join(
@@ -392,9 +409,9 @@ class Realizations:
             colors = iter(palette)
             fig, ax = pyplot.subplots(1, 1)
             for col_idx, col in enumerate(cols):
-                ax.plot(each.t, each[col], color=next(colors), label=col)
+                ax.plot(each.s, each[col], color=next(colors), label=col)
                 ax.set(
-                    xlabel="t [s]",
+                    xlabel="s [km]",
                 )
                 ax.legend(ncol=len(cols))
             pyplot.savefig(os.path.join(
@@ -548,5 +565,4 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
-"""EOF"""
 """EOF"""

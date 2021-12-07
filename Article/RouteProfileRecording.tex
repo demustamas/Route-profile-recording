@@ -163,21 +163,62 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 				\label{table:datasets}
 			\end{table}
 		\subsection{Data processing}
-			The recorded data is processed further with a script developed in Python programming language. During the post-processing of the data three different status of the processing is distinguished. Raw data refers to the recorded data without any alteration. Conditined data refers to the status after general data cleansing is done. Aggregated data refers to the status where the information of the single recorded journeys merged together for each tool separately. \\
+			The recorded data is processed further with a script developed in Python programming language. During the post-processing of the data two different status of the processing is distinguished. Raw data refers to the recorded data without any alteration. Conditined data refers to the status after general data cleansing is done. \\
 			The data cleaning process aims to find single data points that needs to be excluded from further processing, for example speed information recorded above the maximum allowed speed of the vehicle or corrupted data points. The first step is to identify and drop if any corrupted data is present in the time series of the recordings. 
 			Second step of the conditioning is to remove highly uncertain points from the evaluation therefore the dilution of precision (DOP) information is analyzed and measurement points with DOP value above 20 are removed as these considered to be inaccurate according to \cite{tahsinAnalysisDOPIts2015}. Low number of satellites present for a GNSS fix is removed due to low accuracy. The minimum number of satellites of 7 is selected for the current study. 
-			The remaining time series then analyzed for outliers by calculating the rolling means. The rolling means are used to normalize the recorded values and the standard deviation of the normalized series calculated. The treshold is that each recorded point has to be in \textpm 3 standard deviation range. The calculation is performed for the longitude, latitude, altitude and speed values. Once all the corrupted and outlying points are removed a Savitzky-Golay filter was applied to the series to smooth the dataset as proposed by \cite{wilkDigitalFilteringRailway2020}. At this point the conditioned dataset is produced. \\
-			Increasing the number of points for a later statistical analysis on the stochastic behaviour of the route realizations requires several recordings to be done under similar conditions as far as possible. The resulting realizations needs to be aligned to each other. As no reference point of the measurements given the offset between the different realizations need to be determined. This can achieved by searching the maximum value of the correlation for the position locations of the realizations. This can be done in all three dimensions for longitude, latitude and altitude as a function of the distance travelled and then an average value can be taken. The resulting offset applied to the distance values will lead to the aligned set of realizations. Merging all these realizations into a single series results in position coordinates accompanied with speed and altitude information. This is referred as aggregated dataset and allows statistical analysis of the longitude, latitude, altitude and speed values.		
+			The remaining time series then analyzed for outliers by calculating the rolling means with a window of 50. The rolling means are used to normalize the recorded values and the standard deviation of the normalized series calculated. The treshold is that each recorded point has to be in \textpm 3 standard deviation range. The calculation is performed for the longitude, latitude, altitude and speed values. Once all the corrupted and outlying points are removed a Savitzky-Golay filter was applied to the series to smooth the dataset as proposed by \cite{wilkDigitalFilteringRailway2020} considering a window of 11 elements and an order of 2. At this point the conditioned dataset is produced. \\
+			Increasing the number of points for a later statistical analysis on the stochastic behaviour of the route realizations requires several recordings to be done under similar conditions as far as possible. The resulting realizations needs to be aligned to each other. As no reference point of the measurements given the offset between the different realizations need to be determined. This can achieved by searching the maximum value of the correlation for the position locations of the realizations in all three dimensions for longitude, latitude and altitude as a function of the distance travelled. Afterwards an average value can be taken. The resulting offset applied to the distance values will lead to the aligned set of realizations. Merging all these realizations into a single series results in position coordinates accompanied with speed and altitude information. This is referred as aggregated dataset and allows statistical analysis of the longitude, latitude, altitude and speed values at a later step of the research.		
 		\subsection{Assessment method}
-			A static measurement is carried out to assess the accuracy of the positioning of each tool as described in \cite{szotComparativeAnalysisPositioning2019}. The equipment is placed outside in an area free from obstacles and position information is recorded. The test duration is defined as 12 hours and the accuracy is defined as R68 and R95 for both 2D and 3D. R68 and R95 refers to the radius of the circle (2D) or sphere (3D) that includes the 68\% and 95\% of measurement points respectively. 
-			A dynamic measurement is also done, data is recorded while driving a car with stable speeds. Different speeds are selected and the recorded speed profile is compared. This allows the estimation of the accuracy of speed measurement in stable conditions. 
-			Train ride recordings taken to assess how the tools work under railway conditions. A single ride is selected and analyzed in terms position, altitude and speed profile for each tool. An aggregated dataset is prepared to analyze the impact of increasing the number of route profiles recorded. Resulting averaged values for position, altitude and speed is compared between the tools. 
+			A static measurement is carried out to assess the accuracy of the positioning of each tool as described in \cite{szotComparativeAnalysisPositioning2019}. The equipment is placed outside in an area free from obstacles and position information is recorded. The test duration is defined as 4 hours and the accuracy is defined as R95 for both 2D and 3D.  R95 refers to the radius of the circle (2D) or sphere (3D) that includes the 95\% of measurement points. The calculation of the accuracy radius is based on the standard deviation of the lateral ($\sigma_{lat}$) and longitudinal ($\sigma_{lon}$) coordinates which were converted to distances in meters measured from the respective mean value. The follow equation is used to calculate the R95 (2D) value:
+			\begin{equation} \label{eq:R95_2D}
+				R95_{2D}=2\sqrt{\sigma_{lat}^2+\sigma_{lon}^2}
+			\end{equation}
+			To extend the accuracy to three dimensions the standard deviation of the altitude ($\sigma_{alt}$) is calculated and Equation \ref{eq:R95_2D} is extended:
+			\begin{equation} \label{eq:R95_3D}
+				R95_{3D}=2\sqrt{\sigma_{lat}^2+\sigma_{lon}^2+\sigma_{alt}^2}
+			\end{equation}
+			A dynamic measurement covers a car ride of approximately 35 km, data is recorded while keeping constant speeds from 70 km/h to 130 km/h by 10 km/h steps. This allows the estimation of the accuracy of speed measurement in quasistatic conditions which is done by calculating the mean and standard deviation values for each speed steps recorded. A threshold interval for each speed steps should be defined to group the recorded speed profile around each step. As there is a systematic offset between the cruise control of the car and the real speed (approximately the real speed is 4-5 km/h below the cruise control speed) the considerations in Table \ref{table:speed_tresholds} are taken for the speed treshold intervals $[v_{tmin}, v_{tmax}]$.\\
+			\begin{table}[h]
+				\centering			
+				\begin{tabular}{|c|c|c|}
+					\hline 
+					Cruise control speed [km/h] & Minimum threshold [km/h] & Maximum threshold [km/h] \\ 
+					\hline 
+					70 & 60 & 70 \\ 
+					\hline 
+					80 & 70 & 80 \\ 
+					\hline 
+					90 & 80 & 90 \\ 
+					\hline 
+					100 & 90 & 100 \\ 
+					\hline 
+					110 & 100 & 110 \\ 
+					\hline 
+					120 & 110 & 120 \\ 
+					\hline 
+					130 & 120 & 130 \\ 
+					\hline 
+				\end{tabular} 	
+				\caption{Speed tresholds used during dynamic testing}
+				\label{table:speed_tresholds}
+			\end{table}
+			According to the threshold definition the calculations can be performed according to Equation \ref{eq:dynamic1} and Equation \ref{eq:dynamic2}. \\
+			\begin{equation} \label{eq:dynamic1}
+				\overline{v_{step}}=\frac{1}{N}\sum_{v_i \in [v_{tmin}, v_{tmax}]} v_i
+			\end{equation}
+			\begin{equation} \label{eq:dynamic2}
+				\sigma_{step}=\sqrt{\frac{1}{N}\sum_{v_i \in [v_{tmin}, v_{tmax}]} (v_i-\overline{v_{step}})^2}
+			\end{equation}
+			Train ride recordings taken to assess how the tools work under railway conditions. A single ride is selected and analyzed in terms position, altitude and speed profile for each tool.
 			An overview on the number of satellites used for the data recording and the resulting DOP values presented for assessing the achieved accuracy and to allow comparison with different GNSS positioning results.
 	\section{Results}
 		\subsection{Static test}
+			The static measurement was carried out in an urban area on 5th of December, 2021. The receivers were surrounded by tall buildings and trees that might block or reflect the signals causing loss of accuracy. \\	
+			The results of static measurement is shown on Figure \ref{fig:static_loc_iPhone}, \ref{fig:static_loc_gadget1} and \ref{fig:static_loc_gadget2}. The longitudinal and lateral coordinates plotted to represent the horizontal plane and the altitude information is presented on the bar scale. In all three directions the distance refers to the distance measured from the mean value as the assumed position. The calculated position accuracy is shown with orange for the 2D and with green for the 3D case. \\
+			The recordings of the iPhone 11 Pro provided only 32 datapoints while the Gadget 1 and Gadget 2 dataset contained 82150 and 164575 entries respectively. This is well observable on Figure \ref{fig:static_loc_iPhone}. During the data conditioning 4 points were removed from the iPhone measurements and 3135 from the Gadget 1 dataset and 164575 from the Gadget 2 dataset. This is a reduction of approximately 12,5\%, 3\% and 7\%. The range of the longitudinal, lateral values both for Gadget 1 and Gadget 2 ranges between -10 and +10 m distance, except in case of longitudinal values of Gadget 2 that ranges between approx. -20 and +20 m. The altitude values for Gadget 1 and Gadget 2 ranges between -20 and +20 m. Such finding can not be taken for the iPhone due to the low number of recordings achieved.
 			\begin{figure}[h]
 		   		\centering
-		     	\begin{subfigure}[b]{0.45\textwidth}
+		     	\begin{subfigure}[b]{0.45\textwidth} 
 		      		\centering
 		      	  	\includegraphics[width=\textwidth]{Static/raw_static_IPhone 11 Pro.png}
 		      	  	\caption{Raw data}
@@ -186,8 +227,7 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 		      	   \centering
 		      	   \includegraphics[width=\textwidth]{Static/cond_static_IPhone 11 Pro.png}
 		      	   \caption{Conditioned data}
-		     	\end{subfigure}
-		     	
+		     	\end{subfigure} 	
 		      \caption{Position recording of iPhone 11 Pro}
 		      \label{fig:static_loc_iPhone}
 			\end{figure}		
@@ -203,7 +243,6 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 		      	   \includegraphics[width=\textwidth]{Static/cond_static_U-blox M8N.png}
 		      	   \caption{Conditioned data}
 		     	\end{subfigure}
-		     	
 		      \caption{Position recording of Gadget 1}
 		      \label{fig:static_loc_gadget1}
 			\end{figure}		
@@ -219,10 +258,29 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 		      	   \includegraphics[width=\textwidth]{Static/cond_static_MTK 3339.png}
 		      	   \caption{Conditioned data}
 		     	\end{subfigure}
-		     	
 		      \caption{Position recording of Gadget 2}
 		      \label{fig:static_loc_gadget2}
-			\end{figure}		
+			\end{figure}	
+			Numerical results can be found in Table \ref{table:static_results}.
+			\begin{table}[h]
+				\centering
+				\begin{tabular}{|c|c|c|c|c|}
+					\hline 
+					& \multicolumn{2}{c|}{Raw data} & \multicolumn{2}{c|}{Conditioned data} \\ 
+					\hline 
+					Equipment & R95 2D & R95 3D & R95 2D & R95 3D \\ 
+					\hline 
+					iPhone 11 Pro & 13.45 m & 13.88 m & 12.53 m & 12.92 m \\ 
+					\hline 
+					Gadget 1 & 9.65 m & 15.12 m & 9.57 m & 15.01 m \\ 
+					\hline 
+					Gadget 2 & 16.90 m & 22.04 m & 16.80 m & 21.88 m \\ 
+					\hline 
+				\end{tabular} 
+			\caption{R95 values of static measurement}
+			\label{table:static_results}
+			\end{table}
+			
 		\subsection{Dynamic test}
 			\begin{figure}[h]
 		   		\centering
@@ -238,7 +296,7 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 		     	\end{subfigure}
 		     	
 		      \caption{Speed recordings of the receivers during dynamic testing}
-		      \label{fig:static_loc_iPhone}
+		      \label{fig:dynamic_speed}
 			\end{figure}		
 			\begin{figure}[h]
 		   		\centering
@@ -254,10 +312,14 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 		     	\end{subfigure}
 		     	
 		      \caption{Altitude recordings of the receivers during dynamic testing}
-		      \label{fig:static_loc_gadget1}
+		      \label{fig:dynamic_alt}
 			\end{figure}	
+			
+			
+			
+			
 		\subsection{Position measurements}
-			A single route profile for the assessment is selected starting at Füzesabony station, heading to Budapest-Keleti station. The route section in this case starts at the plain section then approaching the hilly area of Gödöllő and arriving to the urban area of Budapest. The location raw and conditioned data is presented on Figure \ref{fig:raw_map} and Figure \ref{fig:cond_map} respectively. It can be seen that the raw data provided a good tracking of the position over the full route profile. The iPhone location data were not so accurate as the recordings with Gadget 1, especially on the second section at Gödöllő Hills. After data cleansing and filtering as the less accurate points were removed the location of the iPhone show larger deviation compared to the recordings of Gadget 1. Both for the iPhone and Gadget 1 the first and third section, the urban area and the plain area respectively resulted in a comparable tracking of the location with limited differences of the location information. The receivers found the satellite signals in a couple of minutes and there was no loss of signal experienced.
+			A single route profile for the assessment is selected starting at Füzesabony station, heading to Budapest-Keleti station. The route section in this case starts at the plain section then approaching the hilly area of Gödöllő and arriving to the urban area of Budapest. The location raw and conditioned data is presented on Figure \ref{fig:raw_map} and Figure \ref{fig:cond_map} respectively. It can be seen that the raw data provided a good tracking of the position over the full route profile. The iPhone location data was not so accurate as the recordings with Gadget 1, especially on the second section at Gödöllő Hills. After data cleansing and filtering as the less accurate points were removed the location of the iPhone show larger deviation compared to the recordings of Gadget 1. Both for the iPhone and Gadget 1 the first and third section, the urban area and the plain area respectively resulted in a comparable tracking of the location with limited differences of the location information. The receivers found the satellite signals in a couple of minutes and there was no loss of signal experienced.
 			\begin{figure}[h]
 				\centering
 		      \includegraphics[width=0.9\textwidth]{raw_map.png}
@@ -277,33 +339,40 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 		      \label{fig:cond_map}
 			\end{figure}
 		\subsection{Altitude measurements}
-			Altitude data before and after the data conditioning algorithm is shown in Figure \ref{fig:raw_alt} and Figure \ref{fig:cond_alt}. Clear difference between the recordings of iPhone and Gadget 1 can be observed. The iPhone supplied data with much less variation while the recordings of the Gadget 1 varies in a much bigger interval greatly exceeding the usual gradients of the railway track. Removing the outliers and filtering the dataset the graph become more smooth, the variation of the Gadget 1 data is reduced. Similar effect was observed for the iPhone recording. Additionally the top of the Gödllő Hills, the peak of the altitude is removed from the iPhone dataset. Variation of the Gadget 1 dataset has the same trend that was recorded with the iPhone.
+			Altitude data before and after the data conditioning algorithm is shown in Figure \ref{fig:route_alt}. Clear difference between the recordings of iPhone and Gadget 1 can be observed. The iPhone supplied data with much less variation while the recordings of the Gadget 1 varies in a much bigger interval greatly exceeding the usual gradients of the railway track. Removing the outliers and filtering the dataset the graph become more smooth, the variation of the Gadget 1 data is reduced. Similar effect was observed for the iPhone recording. Additionally the top of the Gödllő Hills, the peak of the altitude is removed from the iPhone dataset. Variation of the Gadget 1 dataset has the same trend that was recorded with the iPhone.
 			\begin{figure}[h]
-				\centering
-			   	\includegraphics[width=0.9\textwidth]{raw_alt.png}
-			   \caption{Altitude from raw data}
-			   \label{fig:raw_alt}
-			\end{figure}
-			\begin{figure}[h]
-				\centering
-			   \includegraphics[width=0.9\textwidth]{cond_alt.png}
-			   \caption{Altitude from conditioned data}
-			   \label{fig:cond_alt}
-			\end{figure}
+		   		\centering
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      		\centering
+		      	  	\includegraphics[width=\textwidth]{Route/raw_alt.png}
+		      	  	\caption{Raw data}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      	   \centering
+		      	   \includegraphics[width=\textwidth]{Route/cond_alt.png}
+		      	   \caption{Conditioned data}
+		     	\end{subfigure}
+			   \caption{Altitude recording from route profile}
+			   \label{fig:route_alt}
+		   \end{figure}
+
 		\subsection{Speed measurements}
-			The registered speed values for the raw and conditioned data is shown on Figure \ref{fig:raw_speed} and Figure \ref{fig:cond_speed} respectively. On the raw data several outliers can be identified that are exceeding the vehicle maximum speed (160 km/h) and the allowed maximum speed of the tracks (120 km/h). The outliers belong to the data recorded by the iPhone, while the Gadget 1 contains no outliers. After removing these data and applying the Savitzky-Golay filter, the speed profile is obtained. Well corresponding signals can be seen however some observations can be done. All ten stations can be identified for Gadget 1 while iPhone 11 misses some of them. At some points, where the outliers have been removed the speed profile is also lost. This concentrates on the Gödöllő Hills, part of the second section of the route. Some phase shifting can be seen between the two tools towards the end of the recorded profile that corresponds to the urban area of Budapest. On the plain area (which is in this case the beginning of the route) good correlation can be observed between the profiles.
+			The registered speed values for the raw and conditioned data is shown on Figure \ref{fig:route_speed}. On the raw data several outliers can be identified that are exceeding the vehicle maximum speed (160 km/h) and the allowed maximum speed of the tracks (120 km/h). The outliers belong to the data recorded by the iPhone, while the Gadget 1 contains no outliers. After removing these data and applying the Savitzky-Golay filter, the speed profile is obtained. Well corresponding signals can be seen however some observations can be done. All ten stations can be identified for Gadget 1 while iPhone 11 misses some of them. At some points, where the outliers have been removed the speed profile is also lost. This concentrates on the Gödöllő Hills, part of the second section of the route. Some phase shifting can be seen between the two tools towards the end of the recorded profile that corresponds to the urban area of Budapest. On the plain area (which is in this case the beginning of the route) good correlation can be observed between the profiles.
 			\begin{figure}[h]
-				\centering
-		      \includegraphics[width=0.9\textwidth]{raw_speed.png}
-		      \caption{Speed from raw data}
-		      \label{fig:raw_speed}
-			\end{figure}
-			\begin{figure}[h]
-			   \centering
-		      \includegraphics[width=0.9\textwidth]{cond_speed.png}
-		      \caption{Speed from conditioned data}
-		      \label{fig:cond_speed}
-			\end{figure}
+		   		\centering
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      		\centering
+		      	  	\includegraphics[width=\textwidth]{Route/raw_speed.png}
+		      	  	\caption{Raw data}
+		     	\end{subfigure}
+		     	\begin{subfigure}[b]{0.45\textwidth}
+		      	   \centering
+		      	   \includegraphics[width=\textwidth]{Route/cond_speed.png}
+		      	   \caption{Conditioned data}
+		     	\end{subfigure}
+			   \caption{Speed recording from route profile}
+			   \label{fig:route_speed}
+		   \end{figure}
 		\subsection{Dilution of precision and number of satellites}
 			In order to describe the accuracy of the measurements the dilution of precision (DOP) values and the number of satellites are presented in Figure \ref{fig:iPhone_dop} and Figure \ref{fig:Gadget1_dop}. In case of the iPhone the horizontal and vertical DOP values are available. Stable low values can be found in the beginning of the route which increases greatly at the middle section of Gödöllő Hills and then reduces at arriving to Budapest. After clearing the data we can deduct that the horizontal DOP values range between 5 and 20 and the vertical DOP values range between 1 and 5. The results of the Gadget 1 measurement shows the number of satellites, mostly over 9 satellites considered for positioning, also the positional DOP is highlighted which shows low rates but a steady increase on the way to Budapest. After removing the outlyers the number of satellites range between 6 and 14 and the positional DOP changes between 1 and 5, mostly fluctuating around 2.
 			\begin{figure}[h]
@@ -312,39 +381,38 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 		      		\centering
 		      	   \includegraphics[width=\textwidth]{Dynamic/cond_dop_U-blox M8N.png}
 		      	   \caption{Gadget 1}
-		      	   \label{fig:iPhone_raw_dop}
+		      	   \label{fig:dyn_dop_gadget1}
 		     	\end{subfigure}
 		     	\begin{subfigure}[b]{0.45\textwidth}
 		      	   \centering
 		      	   \includegraphics[width=\textwidth]{Dynamic/cond_dop_MTK 3339.png}
 		      	   \caption{Gadget 2}
-		      	   \label{fig:iPhone_cond_dop}
+		      	   \label{fig:dyn_dop_gadget2}
 		     	\end{subfigure}
 		      \caption{DOP and number of satellites - dynamic testing}
-		      \label{fig:iPhone_dop}
+		      \label{fig:dyn_dop_gadgets}
 			\end{figure}
 			\begin{figure}[h]
 		   		\centering
 		     	\begin{subfigure}[b]{0.45\textwidth}
 		      		\centering
 		      	   \includegraphics[width=\textwidth]{Dynamic/cond_dop_IPhone 11 Pro.png}
-		      	   \caption{Raw data}
-		      	   \label{fig:iPhone_raw_dop}
 		     	\end{subfigure}
-		      \label{fig:iPhone_dop}
+				\caption{DOP and number of satellites - dynamic testing - iPhone 11 Pro}		     	
+		      \label{fig:dyn_dop_iphone}
 			\end{figure}
 			
 			\begin{figure}[h]
 		   		\centering
 		     	\begin{subfigure}[b]{0.45\textwidth}
 		      		\centering
-		      	   \includegraphics[width=\textwidth]{raw_dop_0.png}
+		      	   \includegraphics[width=\textwidth]{Route/raw_dop_IPhone 11 Pro.png}
 		      	   \caption{Raw data}
 		      	   \label{fig:iPhone_raw_dop}
 		     	\end{subfigure}
 		     	\begin{subfigure}[b]{0.45\textwidth}
 		      	   \centering
-		      	   \includegraphics[width=\textwidth]{cond_dop_0.png}
+		      	   \includegraphics[width=\textwidth]{Route/cond_dop_IPhone 11 Pro.png}
 		      	   \caption{Conditioned data}
 		      	   \label{fig:iPhone_cond_dop}
 		     	\end{subfigure}
@@ -355,13 +423,13 @@ H-1111 Budapest, Műegyetem rkp. 3, Hungary}
 		    	\centering
 		     	\begin{subfigure}[b]{0.45\textwidth}
 		      		\centering
-		      	   \includegraphics[width=\textwidth]{raw_dop_1.png}
+		      	   \includegraphics[width=\textwidth]{Route/raw_dop_U-blox M8N.png}
 		      	   \caption{Raw data}
 		      	   \label{fig:Gadget1_raw_dop}
 		     	\end{subfigure}
 		     	\begin{subfigure}[b]{0.45\textwidth}
 		      	   \centering
-		      	   \includegraphics[width=\textwidth]{cond_dop_1.png}
+		      	   \includegraphics[width=\textwidth]{Route/cond_dop_U-blox M8N.png}
 		      	   \caption{Conditioned data}
 		      	   \label{fig:Gadget1_cond_dop}
 		     	\end{subfigure}
