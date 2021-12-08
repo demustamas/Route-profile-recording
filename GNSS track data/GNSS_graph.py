@@ -65,7 +65,7 @@ def main():
     Model.queryRealizations(working_path)
     # Model.staticGraph(graph_path)
     # Model.altitudeGraph(graph_path)
-    Model.speedGraph(graph_path)
+    # Model.speedGraph(graph_path)
     # Model.accuracyGraph(graph_path)
     # Model.mapGraph(graph_path)
     # Model.characteristicsGraph(graph_path)
@@ -341,7 +341,7 @@ class Realizations:
 
         colors = iter(palette)
         fig, ax = pyplot.subplots(1, 1)
-        v_tresh = np.arange(60, 130, 10)
+        v_tresh = np.arange(60, 140, 10, )
         for each_idx, each in enumerate(self.rawRealizations):
             for i in range(len(v_tresh)-1):
                 v_step = each.v[(each.v > v_tresh[i])

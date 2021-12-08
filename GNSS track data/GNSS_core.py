@@ -30,7 +30,6 @@ sql_query = """SELECT *
     WHERE recType = 'route'
     AND fromStation = 'Füzesabony'
     AND toStation = 'Keleti'
-    AND trainType = 'IR'
     AND dateTime = '2021/10/17 17:08:19'
     """
 
