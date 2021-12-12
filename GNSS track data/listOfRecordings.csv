@@ -50,3 +50,9 @@ moGPXTracker_20211128131433_2.gpx,dynamic,2021/11/28 13:14:33,B,A,car,car,IPhone
 moGPXTracker_20211204113520.gpx,static,2021/12/04 11:35:20,Kollegium,4,openair,openair,IPhone 11 Pro
 PMTK1008.csv,static,2021/12/04 11:35:20,Kollegium,4,openair,openair,MTK 3339
 UBX10005.csv,static,2021/12/04 11:35:20,Kollegium,4,openair,openair,U-blox M8N
+PMTK1011.CSV,route,2021/12/10 13:29:55,Keleti,Füzesabony,V63+2044+2044+2044+8491+1044,IC,MTK 3339
+UBX10006.CSV,corrupted,2021/12/10 13:29:55,Keleti,Füzesabony,V63+2044+2044+2044+8491+1044,IC,U-blox M8N
+moGPXTracker_20211210132955.gpx,route,2021/12/10 13:29:55,Keleti,Füzesabony,V63+2044+2044+2044+8491+1044,IC,IPhone 11 Pro
+PMTK1014.csv,route,2021/12/12 19:34:04,Füzesabony,Keleti,FLIRT,IR,MTK 3339
+UBX10007.csv,route,2021/12/12 19:34:04,Füzesabony,Keleti,FLIRT,IR,U-blox M8N
+moGPXTracker_20211212193404.gpx,route,2021/12/12 19:34:04,Füzesabony,Keleti,FLIRT,IR,IPhone 11 Pro

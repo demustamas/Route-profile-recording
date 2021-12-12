@@ -23,27 +23,28 @@ import os
 
 database_dir = "Database/"
 database_name = "GNSS recordings.db"
-working_dir = "Results/Route/"
+working_dir = "Results/Test/"
 
 sql_query = """SELECT * 
     FROM listOfRecordings 
     WHERE recType = 'route'
     AND fromStation = 'Füzesabony'
     AND toStation = 'Keleti'
-    AND dateTime = '2021/10/17 17:08:19'
+    AND trainType = 'IR'
+    AND (receiverType = 'IPhone 11 Pro' OR receiverType = 'U-blox M8N')
     """
 
 """SELECT * 
     FROM listOfRecordings 
     WHERE recType = 'dynamic'
-    AND fromStation = ''
-    AND toStation = ''
+    AND fromStation = 'Füzesabony'
+    AND toStation = 'Keleti'
     AND trainConfig = ''
     AND trainType = ''
     AND receiverType = ''
     """
 
-pyplot.style.use('graph.mplstyle')
+pyplot.style.use('mplstyle.work')
 
 """PATH"""
 database_path = os.path.join(database_dir, database_name)

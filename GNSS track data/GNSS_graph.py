@@ -24,7 +24,6 @@ from bokeh.models import (
 from matplotlib import pyplot
 from matplotlib import colors as color_func
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
-import itertools
 
 import os
 from shutil import copy
@@ -34,14 +33,14 @@ from shutil import copy
 """Simulation input parameters"""
 
 database_dir = "Database/"
-working_dir = "Results/Dynamic/"
+working_dir = "Results/Test/"
 station_dir = "Stations/"
 graph_dir = "Graphs/"
 destination_dir = "ToCopy/"
 name_tag = ""
 palette = pyplot.cm.tab10
 palette = palette(range(palette.N))
-pyplot.style.use('graph.mplstyle')
+pyplot.style.use('mplstyle.work')
 
 """PATH"""
 
@@ -69,8 +68,8 @@ def main():
     # Model.speedGraph(graph_path)
     # Model.accuracyGraph(graph_path)
     Model.mapGraph(graph_path)
-    # Model.characteristicsGraph(graph_path)
-    # Model.statisticGraph(graph_path)
+    Model.characteristicsGraph(graph_path)
+    Model.statisticGraph(graph_path)
     # Model.copyFiles(graph_path, destination_path, name_tag)
 
 
@@ -490,7 +489,7 @@ class Realizations:
                         plot_height=250,
                     )
                 )
-                colors = itertools.cycle(palette)
+                colors = iter([color_func.rgb2hex(each) for each in palette])
                 for j, y in enumerate(["hdop", "vdop", "pdop", "nSAT"]):
                     fig[k].line(
                         track.s,

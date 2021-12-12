@@ -440,7 +440,7 @@ class Realizations:
     def saveToDatabase(self, db_path):
         con = sql.connect(db_path)
         for each in self.rawRealizations:
-            print("Uploading {each['Track name'].iloc[0]} to database.")
+            print(f"Uploading {each['Track name'].iloc[0]} to database.")
             each.to_sql(each['Track name'].iloc[0], con,
                         if_exists='replace', index=False)
         print("Uploading new entries to database recordings list.")
