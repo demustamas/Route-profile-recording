@@ -22,6 +22,7 @@ from bokeh.models import (
 )
 
 from matplotlib import pyplot
+from matplotlib import colors as color_func
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 import itertools
 
@@ -67,7 +68,7 @@ def main():
     # Model.altitudeGraph(graph_path)
     # Model.speedGraph(graph_path)
     # Model.accuracyGraph(graph_path)
-    # Model.mapGraph(graph_path)
+    Model.mapGraph(graph_path)
     # Model.characteristicsGraph(graph_path)
     # Model.statisticGraph(graph_path)
     # Model.copyFiles(graph_path, destination_path, name_tag)
@@ -430,7 +431,7 @@ class Realizations:
         latitude /= length
         longitude /= length
 
-        colors = iter(palette)
+        colors = iter([color_func.rgb2hex(each) for each in palette])
         myMap = folium.Map(
             location=[latitude, longitude], tiles="CartoDB positron")
         for track_idx, track in enumerate(self.rawRealizations):
@@ -440,7 +441,7 @@ class Realizations:
             ).add_to(myMap)
         myMap.save(os.path.join(graphPath, "map_raw.html"))
 
-        colors = iter(palette)
+        colors = iter([color_func.rgb2hex(each) for each in palette])
         myMap = folium.Map(
             location=[latitude, longitude], tiles="CartoDB positron")
         for track_idx, track in enumerate(self.condRealizations):
