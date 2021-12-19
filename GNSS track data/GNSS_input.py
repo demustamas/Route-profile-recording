@@ -17,7 +17,7 @@ from geopy.point import Point
 import sys
 import os
 
-"""TODOs"""
+# TODOs
 
 """PATH"""
 
