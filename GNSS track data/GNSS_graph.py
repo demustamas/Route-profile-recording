@@ -26,7 +26,7 @@ from matplotlib import colors as color_func
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 
 import os
-from shutil import copy
+import shutil
 
 # TODOs
 
@@ -49,11 +49,10 @@ graph_path = os.path.join(working_dir, graph_dir)
 station_path = os.path.join(working_dir, station_dir + "stations.csv")
 destination_path = destination_dir
 
-if not os.path.exists(graph_path):
-    os.makedirs(graph_path)
-else:
-    [os.remove(os.path.join(graph_path, f)) for f in os.listdir(
-        graph_path) if os.path.isfile(os.path.join(graph_path, f))]
+if os.path.exists(graph_path):
+    shutil.rmtree(graph_path)
+os.makedirs(graph_path)
+
 
 """Main simulation"""
 
@@ -558,7 +557,7 @@ class Realizations:
     def copyFiles(self, graphPath, destPath, tag):
         if not os.path.exists(destPath):
             os.makedirs(destPath)
-        [copy(graphPath + f, destPath + os.path.splitext(f)[0] + tag + os.path.splitext(f)[1])
+        [shutil.copy(graphPath + f, destPath + os.path.splitext(f)[0] + tag + os.path.splitext(f)[1])
          for f in os.listdir(graphPath) if os.path.isfile(os.path.join(graphPath, f))]
 
 

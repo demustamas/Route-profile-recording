@@ -16,8 +16,10 @@ from scipy.interpolate import interp1d
 from matplotlib import pyplot
 
 import os
+import shutil
 
-"""TODOs"""
+
+# TODOs
 
 """Simulation input parameters"""
 
@@ -25,17 +27,18 @@ database_dir = "Database/"
 database_name = "GNSS recordings.db"
 working_dir = "Results/Test/"
 
-sql_query = """SELECT * 
-    FROM listOfRecordings 
+sql_query = """SELECT *
+    FROM listOfRecordings
     WHERE recType = 'route'
-    AND fromStation = 'Füzesabony'
+    AND (fromStation = 'Füzesabony' OR fromStation = 'Eger')
     AND toStation = 'Keleti'
     AND trainType = 'IR'
-    AND (receiverType = 'IPhone 11 Pro' OR receiverType = 'U-blox M8N')
+    AND (trainConfig = 'FLIRT' OR trainConfig = 'FLIRT+FLIRT')
+    AND NOT receiverType = 'MTK 3339'
     """
 
-"""SELECT * 
-    FROM listOfRecordings 
+"""SELECT *
+    FROM listOfRecordings
     WHERE recType = 'dynamic'
     AND fromStation = 'Füzesabony'
     AND toStation = 'Keleti'
@@ -50,8 +53,9 @@ pyplot.style.use('mplstyle.work')
 database_path = os.path.join(database_dir, database_name)
 workingdir_path = working_dir
 
-if not os.path.exists(workingdir_path):
-    os.makedirs(workingdir_path)
+if os.path.exists(workingdir_path):
+    shutil.rmtree(workingdir_path)
+os.makedirs(workingdir_path)
 
 """Main simulation"""
 
@@ -141,15 +145,13 @@ class Realizations:
             each.reset_index(drop=True, inplace=True)
 
         """Smooth data."""
-        cols = ["lon", "lat", "alt", "v"]
+        cols = ["lon", "lat", "alt", "v", "a"]
+        window = [11, 11, 21, 11, 11]
+        polyorder = [2, 2, 2, 2, 2]
         for each in self.condRealizations:
-            for col in cols:
-                each[col] = signal.savgol_filter(each[col], 11, 2)
-
-        cols = ["a"]
-        for each in self.condRealizations:
-            for col in cols:
-                each[col] = signal.savgol_filter(each[col], 11, 2)
+            for idx, col in enumerate(cols):
+                each[col] = signal.savgol_filter(
+                    each[col], window[idx], polyorder[idx])
 
         """Print out conditioned data."""
         for idx, each in enumerate(self.condRealizations):
@@ -185,8 +187,7 @@ class Realizations:
         """Merge additional GNSS data sets."""
         df = self.sumRealization.copy()
 
-        cols = ["lat", "lon", "alt", "v"]
-        N_rolling = 16
+        cols = ["alt", "v"]
 
         for idx in np.arange(1, len(self.condRealizations)):
             """Set distance offset based on cross-correlation."""
@@ -220,25 +221,15 @@ class Realizations:
                     interp_df[col] = f_df[i](interp_df.x)
                     interp_cond[col] = f_cond[i](interp_cond.x)
 
-                    interp_df_mean = (
-                        interp_df[col]
-                        .rolling(2 * N_rolling, center=True, min_periods=1)
-                        .mean()
-                    )
-                    interp_cond_mean = (
-                        interp_cond[col]
-                        .rolling(2 * N_rolling, center=True, min_periods=1)
-                        .mean()
-                    )
-
-                    interp_df[col] -= interp_df_mean
-                    interp_cond[col] -= interp_cond_mean
+                    interp_df[col] -= interp_df[col].mean()
+                    interp_cond[col] -= interp_cond[col].mean()
 
                     correlation[col] = signal.correlate(
-                        interp_df[col], interp_cond[col], mode="valid"
+                        interp_df[col], interp_cond[col], mode="full"
                     )
+
                     correlation[col + "_lag"] = signal.correlation_lags(
-                        interp_df[col].size, interp_cond[col].size, mode="valid"
+                        interp_df[col].size, interp_cond[col].size, mode="full"
                     )
 
                     dist_offset[i] = (
@@ -246,17 +237,11 @@ class Realizations:
                                     "_lag"][np.argmax(correlation[col])] / 1000
                     )
 
-                print(dist_offset)
-                dist_mean = np.mean(dist_offset)
-                dist_stdev = np.std(dist_offset)
-                dist_offset = [
-                    each for each in dist_offset if abs(each - dist_mean) <= dist_stdev
-                ]
-
                 offset = np.mean(dist_offset)
-                print(dist_offset)
+                print(dist_offset, offset, (dist_offset-offset)/offset)
 
-                self.condRealizations[idx].s += offset
+                self.condRealizations[idx].s += offset - \
+                    self.condRealizations[idx].s.iloc[0]
                 print(
                     f"{self.condRealizations[idx]['Track name'].iloc[0]} aggregated.")
 
@@ -271,7 +256,7 @@ class Realizations:
             fig, ax = pyplot.subplots(1, 1)
             for idx, each in enumerate(self.condRealizations):
                 ax.plot(each.s, each[col],
-                        label=self.query.receiverType.iloc[idx])
+                        label=(str(self.query.dateTime.iloc[idx]) + " / " + str(self.query.receiverType.iloc[idx])))
                 ax.legend(ncol=3)
 
         print("\nData aggregation completed.\n")
@@ -335,4 +320,6 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
+"""EOF"""
+"""EOF"""
 """EOF"""
