@@ -19,7 +19,9 @@ import os
 import shutil
 
 
-# TODOs
+# TODO During aggregation calculate all offset values and start the aggregation
+# with the most precise one (a.k.a. smallest std) - this would increase the
+# overall DF precision / accuracy.
 
 """Simulation input parameters"""
 
@@ -48,14 +50,15 @@ sql_query = """SELECT *
     """
 
 pyplot.style.use('mplstyle.work')
+np.set_printoptions(precision=3)
 
 """PATH"""
 database_path = os.path.join(database_dir, database_name)
-workingdir_path = working_dir
+working_path = working_dir
 
-if os.path.exists(workingdir_path):
-    shutil.rmtree(workingdir_path)
-os.makedirs(workingdir_path)
+if os.path.exists(working_path):
+    shutil.rmtree(working_path)
+os.makedirs(working_path)
 
 """Main simulation"""
 
@@ -64,10 +67,9 @@ def main():
     """Calling simulation model."""
 
     Model.queryRealizations(database_path, sql_query)
-    Model.conditionRealization()
-    Model.aggregateRealization(fit_curves=True)
-    Model.averageRealization()
-    Model.saveToDatabase(workingdir_path)
+    Model.conditionRealization(graph=False)
+    Model.aggregateRealization(fit_curves=True, graph=False)
+    Model.saveToDatabase(working_path)
 
 
 """Simulation model"""
@@ -101,7 +103,7 @@ class Realizations:
         con.close()
         print("\nRealizations loaded.\n")
 
-    def conditionRealization(self):
+    def conditionRealization(self, graph=False):
         """Condition raw GNSS data to allow further processing."""
 
         """Copy raw dataset to conditioned dataset."""
@@ -156,23 +158,24 @@ class Realizations:
         """Print out conditioned data."""
         for idx, each in enumerate(self.condRealizations):
             N_deleted = len(self.rawRealizations[idx]) - len(each)
-            print(f"Removed {N_deleted} points from {each.iloc[0,1]}")
+            print(f"Removed {N_deleted:5} points from {each.iloc[0,1]}")
 
-        cols = ['alt', 'v']
-        for idx, each in enumerate(self.rawRealizations):
-            fig, ax = pyplot.subplots(2, 2)
-            fig.suptitle(each['Track name'].iloc[0])
-            for col_idx, col in enumerate(cols):
-                ax[col_idx, 0].plot(each.s, each[col],
-                                    color='green', label=col)
-                ax[col_idx, 1].plot(self.condRealizations[idx].s,
-                                    self.condRealizations[idx][col], color='blue', label=col)
-                ax[col_idx, 0].legend()
-                ax[col_idx, 1].legend()
+        if graph:
+            cols = ['alt', 'v']
+            for idx, each in enumerate(self.rawRealizations):
+                fig, ax = pyplot.subplots(2, 2)
+                fig.suptitle(each['Track name'].iloc[0])
+                for col_idx, col in enumerate(cols):
+                    ax[col_idx, 0].plot(each.s, each[col],
+                                        color='green', label=col)
+                    ax[col_idx, 1].plot(self.condRealizations[idx].s,
+                                        self.condRealizations[idx][col], color='blue', label=col)
+                    ax[col_idx, 0].legend()
+                    ax[col_idx, 1].legend()
 
         print("\nData conditioning performed.\n")
 
-    def aggregateRealization(self, fit_curves=True):
+    def aggregateRealization(self, fit_curves=True, graph=False):
         """Aggregate GNSS data into one dataframe."""
 
         """Copy first dataset."""
@@ -238,7 +241,9 @@ class Realizations:
                     )
 
                 offset = np.mean(dist_offset)
-                print(dist_offset, offset, (dist_offset-offset)/offset)
+                print(f"\tOffset vector:  {dist_offset}")
+                print(f"\tRelative error: {(dist_offset-offset)/offset}")
+                print(f"\tMean offset:    {offset}")
 
                 self.condRealizations[idx].s += offset - \
                     self.condRealizations[idx].s.iloc[0]
@@ -252,38 +257,15 @@ class Realizations:
 
         self.sumRealization = df
 
-        for col in cols:
-            fig, ax = pyplot.subplots(1, 1)
-            for idx, each in enumerate(self.condRealizations):
-                ax.plot(each.s, each[col],
-                        label=(str(self.query.dateTime.iloc[idx]) + " / " + str(self.query.receiverType.iloc[idx])))
-                ax.legend(ncol=3)
+        if graph:
+            for col in cols:
+                fig, ax = pyplot.subplots(1, 1)
+                for idx, each in enumerate(self.condRealizations):
+                    ax.plot(each.s, each[col],
+                            label=(str(self.query.dateTime.iloc[idx]) + " / " + str(self.query.receiverType.iloc[idx])))
+                    ax.legend(ncol=3)
 
         print("\nData aggregation completed.\n")
-
-    def averageRealization(self):
-        """Clean sum GNSS data."""
-        self.avRealization.s = self.sumRealization.s
-
-        """Calculate rolling median of GNSS data based on distance."""
-        cols = ["alt", "v", "lat", "lon", "a"]
-        N = [10, 10, 10, 10, 10]
-
-        for n, col in enumerate(cols):
-            self.avRealization[col] = (
-                self.sumRealization[col]
-                .rolling(N[n], center=True, min_periods=1)
-                .mean()
-            )
-            if col in ["alt", "v", "a"]:
-                centered = self.sumRealization[col] - self.avRealization[col]
-                self.avRealization[col + "_std"] = centered.rolling(
-                    N[n], center=True, min_periods=1
-                ).std()
-
-        print("Rolling means calculated.")
-
-        print("\nMean and standard deviation values calculated.")
 
     def saveToDatabase(self, wdir):
         """Save calculated data to database."""
@@ -320,6 +302,4 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
-"""EOF"""
-"""EOF"""
 """EOF"""

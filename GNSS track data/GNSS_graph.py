@@ -28,7 +28,6 @@ from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 import os
 import shutil
 
-# TODOs
 
 """Simulation input parameters"""
 
@@ -66,8 +65,8 @@ def main():
     # Model.altitudeGraph(graph_path)
     # Model.speedGraph(graph_path)
     # Model.accuracyGraph(graph_path)
-    Model.mapGraph(graph_path)
-    Model.characteristicsGraph(graph_path)
+    # Model.mapGraph(graph_path)
+    # Model.characteristicsGraph(graph_path)
     Model.statisticGraph(graph_path)
     # Model.copyFiles(graph_path, destination_path, name_tag)
 
@@ -503,7 +502,7 @@ class Realizations:
 
         plt.output_file(os.path.join(
             graphPath, "route_characteristics.html"))
-        plt.save(lyt.gridplot(fig, ncols=2, sizing_mode="scale_width"))
+        plt.save(lyt.gridplot(fig, ncols=2, sizing_mode="stretch_width"))
         print("Route characteristics plotted.")
 
     def statisticGraph(self, graphPath):
@@ -511,25 +510,27 @@ class Realizations:
         k = 0
         fig_sum = []
         cols = ["alt", "v", "a"]
-        linecolor = ['seagreen', 'royalblue', 'tomato']
+        colorRealizations = ['seagreen', 'royalblue', 'lightsalmon']
+        colorAverage = ['green', 'blue', 'red']
+
         for j, col in enumerate(cols):
             fig_sum.append(plt.figure(plot_height=250))
             fig_sum[k].line(
                 self.avRealization.s,
-                self.avRealization[col],
-                line_color=linecolor[j],
-                line_dash="dotted",
+                self.avRealization[col + "_filt"],
+                line_color=colorAverage[j],
+                line_width=2,
             )
             for each in self.condRealizations:
                 fig_sum[k].line(
-                    each.s, each[col], line_alpha=0.2, line_color=linecolor[j]
+                    each.s, each[col], line_alpha=0.2, line_color=colorRealizations[j]
                 )
 
             fig_sum[k].varea(
                 self.avRealization.s,
                 self.avRealization[col] - 3 * self.avRealization[col + "_std"],
                 self.avRealization[col] + 3 * self.avRealization[col + "_std"],
-                fill_color=linecolor[j],
+                fill_color=colorRealizations[j],
                 fill_alpha=0.1,
             )
 
