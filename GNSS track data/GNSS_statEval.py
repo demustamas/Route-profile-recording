@@ -11,15 +11,15 @@ import pandas as pd
 import numpy as np
 
 from scipy.signal import butter, filtfilt
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, UnivariateSpline
 
 from matplotlib import pyplot as plt
 
 import os
 
-# TODO Implement altitude gradient based on linear approximation of the altitude
-
 # TODO Introduce v_max detection and calculate the corresponding filtered v_max
+
+# ??? What to do with the NaNs coming from the np.gradient at altitude?
 
 # ??? What to do with 'a'?
 
@@ -48,6 +48,7 @@ def main():
     Model.queryRealizations(working_path)
     Model.averageRealization()
     Model.filterRealization()
+    Model.calcAltitude()
     Model.saveToDatabase(working_path)
 
 
@@ -124,7 +125,7 @@ class Realizations:
             x = np.linspace(
                 self.avRealization.s.iloc[0], self.avRealization.s.iloc[-1], len(self.avRealization.s))
             resampled = f(x)
-            b, a = butter(5, 0.01, output='ba')
+            b, a = butter(5, 0.001, output='ba')
             filtered = filtfilt(b, a, resampled)
             f = interp1d(x, filtered)
             backSampled = f(self.avRealization.s)
@@ -135,6 +136,23 @@ class Realizations:
                 print(f"Filtering successful for {col}.")
 
         print("Average values filtered.\n")
+
+    def calcAltitude(self):
+        """Approximate altitude with piece-wise linear fit and calculate gradient."""
+
+        spl = UnivariateSpline(self.avRealization.s,
+                               self.avRealization.alt_filt, k=1)
+        self.avRealization['alt_lin'] = spl(self.avRealization.s)
+
+        print("Altitude piece-wise approximation done.")
+
+        self.avRealization['alt_grad'] = np.gradient(
+            self.avRealization.alt_lin, self.avRealization.s)
+
+        if np.isnan(self.avRealization.alt_grad).any():
+            print("Altitude gradient calculation contains NaNs!")
+        else:
+            print("Altitude gradient calculated.")
 
     def saveToDatabase(self, wdir):
         """Save calculated data to database."""
@@ -150,6 +168,8 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
+"""EOF"""
+"""EOF"""
 """EOF"""
 """EOF"""
 """EOF"""

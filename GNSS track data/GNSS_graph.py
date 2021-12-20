@@ -16,6 +16,8 @@ from bokeh import plotting as plt
 from bokeh import layouts as lyt
 from bokeh.models import (
     ColumnDataSource,
+    LinearAxis,
+    Range1d,
     LabelSet,
     ZoomInTool,
     ZoomOutTool,
@@ -534,6 +536,23 @@ class Realizations:
                 fill_alpha=0.1,
             )
 
+            if col == 'alt':
+                fig_sum[k].line(
+                    self.avRealization.s,
+                    self.avRealization.alt_lin,
+                    line_color='orange',
+                )
+                fig_sum[k].extra_y_ranges = {"secondary": Range1d(
+                    start=min(self.avRealization.alt_grad)-1, end=max(self.avRealization.alt_grad)+1)}
+                fig_sum[k].add_layout(LinearAxis(
+                    y_range_name="secondary"), 'left')
+                fig_sum[k].line(
+                    self.avRealization.s,
+                    self.avRealization.alt_grad,
+                    line_color='orange',
+                    y_range_name="secondary"
+                )
+
             source = ColumnDataSource(data=self.stations)
             labels = LabelSet(
                 x="s",
@@ -565,4 +584,5 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
+"""EOF"""
 """EOF"""
