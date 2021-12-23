@@ -36,7 +36,7 @@ sql_query = """SELECT *
     AND toStation = 'Keleti'
     AND trainType = 'IR'
     AND (trainConfig = 'FLIRT' OR trainConfig = 'FLIRT+FLIRT')
-    AND NOT receiverType = 'MTK 3339'
+    AND receiverType = 'U-blox M8N'
     """
 
 """SELECT *
@@ -148,7 +148,7 @@ class Realizations:
 
         """Smooth data."""
         cols = ["lon", "lat", "alt", "v", "a"]
-        window = [11, 11, 21, 11, 11]
+        window = [11, 11, 21, 21, 21]
         polyorder = [2, 2, 2, 2, 2]
         for each in self.condRealizations:
             for idx, col in enumerate(cols):

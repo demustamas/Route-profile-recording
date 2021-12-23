@@ -68,7 +68,7 @@ def main():
     # Model.speedGraph(graph_path)
     # Model.accuracyGraph(graph_path)
     # Model.mapGraph(graph_path)
-    # Model.characteristicsGraph(graph_path)
+    Model.characteristicsGraph(graph_path)
     Model.statisticGraph(graph_path)
     # Model.copyFiles(graph_path, destination_path, name_tag)
 
@@ -517,12 +517,20 @@ class Realizations:
 
         for j, col in enumerate(cols):
             fig_sum.append(plt.figure(plot_height=250))
-            fig_sum[k].line(
-                self.avRealization.s,
-                self.avRealization[col + "_filt"],
-                line_color=colorAverage[j],
-                line_width=2,
-            )
+            if col == "alt" or col == "a":
+                fig_sum[k].line(
+                    self.avRealization.s,
+                    self.avRealization[col + "_filt"],
+                    line_color=colorAverage[j],
+                    line_width=2,
+                )
+            if col == "v":
+                fig_sum[k].line(
+                    self.avRealization.s,
+                    self.avRealization[col + "_max"],
+                    line_color=colorAverage[j],
+                    line_width=2,
+                )
             for each in self.condRealizations:
                 fig_sum[k].line(
                     each.s, each[col], line_alpha=0.2, line_color=colorRealizations[j]
@@ -584,5 +592,4 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
-"""EOF"""
 """EOF"""
