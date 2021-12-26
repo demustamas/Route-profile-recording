@@ -19,8 +19,6 @@ import os
 
 # ??? What to do with the NaNs coming from the np.gradient at altitude?
 
-# ??? What to do with 'a'?
-
 """Simulation input parameters"""
 
 database_dir = "Database/"
@@ -48,8 +46,7 @@ def main():
     Model.filterRealization()
     Model.calcAltitude()
     Model.calcvMax()
-    Model.calcResistance()
-    Model.calcTraction(graph=True)
+    Model.calcTrackResistance()
     Model.saveToDatabase(working_path)
 
 
@@ -152,10 +149,9 @@ class Realizations:
         self.avRealization['alt_grad'] = np.gradient(
             self.avRealization.alt_lin, self.avRealization.s)
 
-        if np.isnan(self.avRealization.alt_grad).any():
-            print("Altitude gradient calculation contains NaNs!")
-        else:
-            print("Altitude gradient calculated.")
+        self.avRealization.alt_grad.fillna(method='ffill', inplace=True)
+
+        print("Altitude gradient calculated.")
 
     def calcvMax(self):
         """Calculate v max from route profile."""
@@ -193,45 +189,17 @@ class Realizations:
 
         print("\nCalculation of vmax done.")
 
-    def calcResistance(self):
-        """Calculate track and vehicle resistance."""
+    def calcTrackResistance(self):
+        """Calculate track resistance."""
 
         M = 124
         g = 9.80665
-        a, b, c = 2, 0, 0.022/100
-
+        self.avRealization['track_resistance'] = self.avRealization.alt_grad * M * g
         for each in self.condRealizations:
-            each['veh_resistance'] = (a + b * each.v + c * each.v ** 2) * M * g
-            each['track_resistance'] = self.avRealization.alt_grad * M * g
+            each['track_resistance'] = self.avRealization.track_resistance.iloc[np.searchsorted(
+                self.avRealization.s, each.s)].reset_index(drop=True)
 
-        print("\nVehicle and track resistances calculated.")
-
-    def calcTraction(self, graph=False):
-        """Calculate traction forces."""
-
-        gamma = 0.2
-        M = 124000
-
-        for each in self.condRealizations:
-            each['F_traction'] = (1 + gamma) * M * each.a + \
-                each.veh_resistance + each.track_resistance
-
-        if graph:
-            for idx, each in enumerate(self.condRealizations):
-                fig, ax = plt.subplots(3, 1)
-                ax[0].plot(each.s, each.F_traction,
-                           label=(str(self.query.dateTime.iloc[idx]) + " / " + str(self.query.receiverType.iloc[idx])))
-                ax[1].plot(each.s, each.a*100)
-                ax[1].plot(each.s, each.v)
-                ax[2].plot(self.avRealization.s, self.avRealization.alt)
-                ax[2].plot(self.avRealization.s, self.avRealization.alt_grad)
-                ax[0].legend(ncol=3)
-
-        print("\nTraction forces calculated.")
-
-    def calcControlMatrix(self):
-        """Calculate control matrix."""
-        pass
+        print("\nTrack resistance calculated.")
 
     def saveToDatabase(self, wdir):
         """Save calculated data to database."""
@@ -253,4 +221,5 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
+"""EOF"""
 """EOF"""

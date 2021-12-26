@@ -148,8 +148,8 @@ class Realizations:
 
         """Smooth data."""
         cols = ["lon", "lat", "alt", "v", "a"]
-        window = [11, 11, 21, 21, 21]
-        polyorder = [2, 2, 2, 2, 2]
+        window = [11, 11, 21, 21, 151]
+        polyorder = [2, 2, 2, 2, 3]
         for each in self.condRealizations:
             for idx, col in enumerate(cols):
                 each[col] = signal.savgol_filter(

@@ -69,7 +69,8 @@ def main():
     # Model.accuracyGraph(graph_path)
     # Model.mapGraph(graph_path)
     Model.characteristicsGraph(graph_path)
-    Model.statisticGraph(graph_path)
+    Model.trackGraph(graph_path)
+    Model.vehGraph(graph_path)
     # Model.copyFiles(graph_path, destination_path, name_tag)
 
 
@@ -301,7 +302,6 @@ class Realizations:
 
     def altitudeGraph(self, graphPath):
         """Create altitude graph."""
-
         colors = iter(palette)
         fig, ax = pyplot.subplots(1, 1)
         for each_idx, each in enumerate(self.rawRealizations):
@@ -338,7 +338,6 @@ class Realizations:
 
     def speedGraph(self, graphPath):
         """Plot speed."""
-
         colors = iter(palette)
         fig, ax = pyplot.subplots(1, 1)
         v_tresh = np.arange(60, 140, 10, )
@@ -421,7 +420,6 @@ class Realizations:
 
     def mapGraph(self, graphPath):
         """Put single rides on map."""
-
         latitude, longitude, length = 0, 0, 0
         for track_idx, track in enumerate(self.condRealizations):
             latitude += np.sum(track.lat)
@@ -454,7 +452,6 @@ class Realizations:
 
     def characteristicsGraph(self, graphPath):
         """Plot characteristics of each recorded route."""
-
         k = 0
         fig = []
         cols = ["alt", "v", "a"]
@@ -473,7 +470,7 @@ class Realizations:
                         )
                     )
                     fig[k].line(track.s, track[col],
-                                line_color=linecolor[j])
+                                line_color=linecolor[j], legend_label=col)
                     fig[k].xaxis[0].axis_label = track.s.name
                     fig[k].yaxis[0].axis_label = track[col].name
                     k += 1
@@ -507,22 +504,23 @@ class Realizations:
         plt.save(lyt.gridplot(fig, ncols=2, sizing_mode="stretch_width"))
         print("Route characteristics plotted.")
 
-    def statisticGraph(self, graphPath):
-        """Plot sum ride data."""
+    def trackGraph(self, graphPath):
+        """Plot track data."""
         k = 0
         fig_sum = []
-        cols = ["alt", "v", "a"]
+        cols = ["alt", "v"]
         colorRealizations = ['seagreen', 'royalblue', 'lightsalmon']
         colorAverage = ['green', 'blue', 'red']
 
         for j, col in enumerate(cols):
             fig_sum.append(plt.figure(plot_height=250))
-            if col == "alt" or col == "a":
+            if col == "alt":
                 fig_sum[k].line(
                     self.avRealization.s,
                     self.avRealization[col + "_filt"],
                     line_color=colorAverage[j],
                     line_width=2,
+                    legend_label=col,
                 )
             if col == "v":
                 fig_sum[k].line(
@@ -530,18 +528,22 @@ class Realizations:
                     self.avRealization[col + "_max"],
                     line_color=colorAverage[j],
                     line_width=2,
+                    legend_label=col,
                 )
             for each in self.condRealizations:
                 fig_sum[k].line(
-                    each.s, each[col], line_alpha=0.2, line_color=colorRealizations[j]
+                    each.s, each[col], line_alpha=0.2, line_color=colorRealizations[j], legend_label=col,
                 )
 
             fig_sum[k].varea(
                 self.avRealization.s,
-                self.avRealization[col] - 3 * self.avRealization[col + "_std"],
-                self.avRealization[col] + 3 * self.avRealization[col + "_std"],
+                self.avRealization[col] - 3 *
+                self.avRealization[col + "_std"],
+                self.avRealization[col] + 3 *
+                self.avRealization[col + "_std"],
                 fill_color=colorRealizations[j],
                 fill_alpha=0.1,
+                legend_label=col,
             )
 
             if col == 'alt':
@@ -549,6 +551,7 @@ class Realizations:
                     self.avRealization.s,
                     self.avRealization.alt_lin,
                     line_color='orange',
+                    legend_label='alt_lin',
                 )
                 fig_sum[k].extra_y_ranges = {"secondary": Range1d(
                     start=min(self.avRealization.alt_grad)-1, end=max(self.avRealization.alt_grad)+1)}
@@ -558,6 +561,7 @@ class Realizations:
                     self.avRealization.s,
                     self.avRealization.alt_grad,
                     line_color='orange',
+                    legend_label='alt_grad',
                     y_range_name="secondary"
                 )
 
@@ -578,9 +582,60 @@ class Realizations:
             fig_sum[k].yaxis[0].axis_label = self.sumRealization[col].name
             k += 1
         plt.output_file(os.path.join(
-            graphPath, "route_statistics.html"))
+            graphPath, "track_data.html"))
         plt.save(lyt.gridplot(fig_sum, ncols=1, sizing_mode="scale_width"))
-        print("Route statistics plotted.")
+        print("Track data plotted.")
+
+    def vehGraph(self, graphPath):
+        """Plot vehicle data."""
+        k = 0
+        fig_sum = []
+        cols = ['F_traction', 'u_traction', 'u_brake']
+        color = ['crimson', 'royalblue', 'seagreen']
+
+        for each in self.condRealizations:
+            fig_sum.append(plt.figure(
+                plot_height=250,
+                title=each.loc[0, "Track name"],
+                title_location="left",))
+            fig_sum[k].extra_y_ranges = {"secondary": Range1d(
+                start=min(each.u_brake)-1, end=10 * max(each.u_traction)+1)}
+            fig_sum[k].add_layout(LinearAxis(
+                y_range_name="secondary"), 'left')
+
+            for j, col in enumerate(cols):
+                if col == 'F_traction':
+                    fig_sum[k].line(
+                        each.s, each[col], line_color=color[j], legend_label=col
+                    )
+                if col == 'u_traction' or col == 'u_brake':
+                    fig_sum[k].line(
+                        each.s, each[col], line_color=color[j], legend_label=col, y_range_name="secondary"
+                    )
+
+            fig_sum[k].varea_stack(
+                ['veh_resistance', 'track_resistance'], x='s', color=['mediumslateblue', 'orange'], fill_alpha=0.2, legend_label=['veh_resistance', 'track_resistance'], source=each)
+
+            source = ColumnDataSource(data=self.stations)
+            labels = LabelSet(
+                x="s",
+                y=0,
+                text="station",
+                text_font_size="12px",
+                text_font_style="bold",
+                angle=np.pi / 2,
+                source=source,
+                render_mode="canvas",
+            )
+            fig_sum[k].add_layout(labels)
+            fig_sum[k].add_tools(ZoomInTool(), ZoomOutTool())
+            fig_sum[k].xaxis[0].axis_label = "s"
+            fig_sum[k].yaxis[0].axis_label = "Resistances and traction force"
+            k += 1
+        plt.output_file(os.path.join(
+            graphPath, "veh_data.html"))
+        plt.save(lyt.gridplot(fig_sum, ncols=1, sizing_mode="scale_width"))
+        print("Vehicle data plotted.")
 
     def copyFiles(self, graphPath, destPath, tag):
         if not os.path.exists(destPath):
