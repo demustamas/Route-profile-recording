@@ -10,9 +10,10 @@ import sqlite3 as sql
 import folium
 import pandas as pd
 import numpy as np
+import scipy.stats as ss
 
 from geopy.distance import distance as gdist
-from bokeh import plotting as plt
+from bokeh import plotting as bkh
 from bokeh import layouts as lyt
 from bokeh.models import (
     ColumnDataSource,
@@ -68,9 +69,10 @@ def main():
     # Model.speedGraph(graph_path)
     # Model.accuracyGraph(graph_path)
     # Model.mapGraph(graph_path)
-    Model.characteristicsGraph(graph_path)
+    # Model.characteristicsGraph(graph_path)
     Model.trackGraph(graph_path)
     Model.vehGraph(graph_path)
+    Model.controlMatrixGraph(graph_path)
     # Model.copyFiles(graph_path, destination_path, name_tag)
 
 
@@ -87,6 +89,12 @@ class Realizations:
         self.condRealizations = []
         self.sumRealization = pd.DataFrame()
         self.avRealization = pd.DataFrame()
+        self.controlMatrix = []
+        self.controlMatrixSum = []
+        self.controlMatrixNorm = []
+        self.controlMatrixSumNorm = []
+        self.controlDuration = []
+        self.controlDurationSum = []
 
     def generateStations(self, stat_path):
         try:
@@ -124,6 +132,61 @@ class Realizations:
         con = sql.connect(wPath + "avRealization.db")
         self.avRealization = pd.read_sql("SELECT * FROM \"av\"", con)
         con.close()
+
+        npzFile = np.load(wPath + "controlMatrices.npz", allow_pickle=True)
+        arrayName = []
+        for file in npzFile.files:
+            arrayName.append([])
+            strings = file.split('_')
+            arrayName[-1].append(strings[0])
+            arrayName[-1].append(strings[1])
+            arrayName[-1].append("_".join(strings[2:]))
+
+        N_realizations = int((len(npzFile.files) - 6) / 2 / 3)
+        for i in range(N_realizations):
+            self.controlMatrix.append([])
+            self.controlMatrixNorm.append([])
+            self.controlDuration.append([])
+            for _ in ['traction', 'brake']:
+                self.controlMatrix[-1].append(np.array([]))
+                self.controlMatrixNorm[-1].append(np.array([]))
+                self.controlDuration[-1].append([])
+        for _ in ['traction', 'brake']:
+            self.controlMatrixSum.append(np.array([]))
+            self.controlMatrixSumNorm.append(np.array([]))
+            self.controlDurationSum.append([])
+
+        for each in arrayName:
+            if each[1] == 'traction':
+                ctrlIdx = 0
+            elif each[1] == 'brake':
+                ctrlIdx = 1
+            else:
+                print("Control function load failure! (ctrlIdx)")
+            try:
+                realizationIdx = self.query.index[self.query.fileName == each[2]][0]
+            except ValueError:
+                print(
+                    "Control function load failure! (Filename not found in query list.)")
+            if each[0] == 'controlMatrix':
+                self.controlMatrix[realizationIdx][ctrlIdx] = npzFile["_".join(
+                    each)]
+            elif each[0] == 'controlMatrixNorm':
+                self.controlMatrixNorm[realizationIdx][ctrlIdx] = npzFile["_".join(
+                    each)]
+            elif each[0] == 'controlMatrixSum':
+                self.controlMatrixSum[ctrlIdx] = npzFile["_".join(each)]
+            elif each[0] == 'controlMatrixSumNorm':
+                self.controlMatrixSumNorm[ctrlIdx] = npzFile["_".join(each)]
+            elif each[0] == 'controlDuration':
+                self.controlDuration[realizationIdx][ctrlIdx] = npzFile["_".join(
+                    each)]
+            elif each[0] == 'controlDurationSum':
+                self.controlDurationSum[ctrlIdx] = npzFile["_".join(
+                    each)]
+            else:
+                print("Wrong keyword found during loading npz file.")
+
         print("\nRealizations loaded.\n")
 
     def staticGraph(self, graphPath):
@@ -463,8 +526,8 @@ class Realizations:
                     self.condRealizations[idx],
                 ]:
                     fig.append(
-                        plt.figure(
-                            title=track.loc[0, "Track name"],
+                        bkh.figure(
+                            title=track.loc[0, "Track_name"],
                             title_location="left",
                             plot_height=250,
                         )
@@ -480,8 +543,8 @@ class Realizations:
                 self.condRealizations[idx],
             ]:
                 fig.append(
-                    plt.figure(
-                        title=track.loc[0, "Track name"],
+                    bkh.figure(
+                        title=track.loc[0, "Track_name"],
                         title_location="left",
                         plot_height=250,
                     )
@@ -499,9 +562,9 @@ class Realizations:
                 fig[k].legend.location = "top_left"
                 k += 1
 
-        plt.output_file(os.path.join(
+        bkh.output_file(os.path.join(
             graphPath, "route_characteristics.html"))
-        plt.save(lyt.gridplot(fig, ncols=2, sizing_mode="stretch_width"))
+        bkh.save(lyt.gridplot(fig, ncols=2, sizing_mode="stretch_width"))
         print("Route characteristics plotted.")
 
     def trackGraph(self, graphPath):
@@ -513,7 +576,7 @@ class Realizations:
         colorAverage = ['green', 'blue', 'red']
 
         for j, col in enumerate(cols):
-            fig_sum.append(plt.figure(plot_height=250))
+            fig_sum.append(bkh.figure(plot_height=250))
             if col == "alt":
                 fig_sum[k].line(
                     self.avRealization.s,
@@ -581,25 +644,25 @@ class Realizations:
             fig_sum[k].xaxis[0].axis_label = self.sumRealization.s.name
             fig_sum[k].yaxis[0].axis_label = self.sumRealization[col].name
             k += 1
-        plt.output_file(os.path.join(
+        bkh.output_file(os.path.join(
             graphPath, "track_data.html"))
-        plt.save(lyt.gridplot(fig_sum, ncols=1, sizing_mode="scale_width"))
+        bkh.save(lyt.gridplot(fig_sum, ncols=1, sizing_mode="scale_width"))
         print("Track data plotted.")
 
     def vehGraph(self, graphPath):
         """Plot vehicle data."""
         k = 0
         fig_sum = []
-        cols = ['F_traction', 'u_traction', 'u_brake']
+        cols = ['F_traction', 'traction', 'brake']
         color = ['crimson', 'royalblue', 'seagreen']
 
         for each in self.condRealizations:
-            fig_sum.append(plt.figure(
+            fig_sum.append(bkh.figure(
                 plot_height=250,
-                title=each.loc[0, "Track name"],
+                title=each.loc[0, "Track_name"],
                 title_location="left",))
             fig_sum[k].extra_y_ranges = {"secondary": Range1d(
-                start=min(each.u_brake)-1, end=10 * max(each.u_traction)+1)}
+                start=-max(each.brake)-1, end=10 * max(each.traction)+1)}
             fig_sum[k].add_layout(LinearAxis(
                 y_range_name="secondary"), 'left')
 
@@ -608,9 +671,13 @@ class Realizations:
                     fig_sum[k].line(
                         each.s, each[col], line_color=color[j], legend_label=col
                     )
-                if col == 'u_traction' or col == 'u_brake':
+                if col == 'traction':
                     fig_sum[k].line(
                         each.s, each[col], line_color=color[j], legend_label=col, y_range_name="secondary"
+                    )
+                if col == 'brake':
+                    fig_sum[k].line(
+                        each.s, -each[col], line_color=color[j], legend_label=col, y_range_name="secondary"
                     )
 
             fig_sum[k].varea_stack(
@@ -632,12 +699,67 @@ class Realizations:
             fig_sum[k].xaxis[0].axis_label = "s"
             fig_sum[k].yaxis[0].axis_label = "Resistances and traction force"
             k += 1
-        plt.output_file(os.path.join(
+        bkh.output_file(os.path.join(
             graphPath, "veh_data.html"))
-        plt.save(lyt.gridplot(fig_sum, ncols=1, sizing_mode="scale_width"))
+        bkh.save(lyt.gridplot(fig_sum, ncols=1, sizing_mode="scale_width"))
         print("Vehicle data plotted.")
 
+    def controlMatrixGraph(self, graphPath):
+        """Create control matrix representations."""
+
+        fig, ax = pyplot.subplots(1, 2)
+        for idx, each in enumerate(self.controlMatrixSumNorm):
+            ax[idx].imshow(each, cmap='YlGn')
+            ax[idx].set_xticks(np.arange(-0.5, len(each)-0.5, 1), minor=True)
+            ax[idx].set_yticks(np.arange(-0.5, len(each)-0.5, 1), minor=True)
+            ax[idx].set_xticks(np.arange(0, len(each), 1))
+            ax[idx].set_yticks(np.arange(0, len(each), 1))
+            ax[idx].xaxis.set_tick_params(
+                top=True, bottom=False, labeltop=True, labelbottom=False, which='both')
+            ax[idx].yaxis.grid(False, which='major')
+            ax[idx].yaxis.grid(True, which='minor')
+            ax[idx].xaxis.grid(False, which='major')
+            ax[idx].xaxis.grid(True, which='minor')
+            for (j, i), label in np.ndenumerate(each):
+                if label != 0:
+                    ax[idx].text(i, j, f"{label:1.3f}",
+                                 ha='center', va='center')
+        ax[0].set_title('Control matrix for traction')
+        ax[1].set_title('Control matrix for braking')
+
+        print("Control matrix graphs generated.")
+
+        control = ['Traction', 'Brake']
+        N = int(np.ceil(np.sqrt(len(self.controlDurationSum[0]))))
+        fig = pyplot.figure()
+        gs = fig.add_gridspec(1, len(control))
+        for ctrlIdx, ctrl in enumerate(control):
+            gsub = gs[ctrlIdx].subgridspec(N, N)
+            ax = gsub.subplots()
+            ax = ax.flat
+            for idx, each in enumerate(self.controlDurationSum[ctrlIdx]):
+                if each.size != 0:
+                    ax[idx].hist(each, bins=20, density=True)
+                    params = ss.expon.fit(each)
+                    print(
+                        f"\tExponential distribution fitted - {ctrl} - {idx}: {params[0]:1.3f}\t\t{params[1]:1.3f}")
+                    rx = np.linspace(min(each), max(each), 100)
+                    rp = ss.expon.pdf(rx, *params)
+                    ax[idx].plot(rx, rp)
+                    ax[idx].text(0.9, 0.9, f"λ = {params[1]:1.3f}",
+                                 size=12, transform=ax[idx].transAxes, ha='right', va='top')
+                    ax[idx].set_xlim(left=0)
+                    ax[idx].set_xlabel("t[s]", loc='right')
+                else:
+                    print(
+                        f"\tExponential distribution not fitted - {ctrl} - {idx}.")
+                ax[idx].title.set_text(f"{ctrl} - {idx}")
+
+        print("Control duration histograms plotted.")
+
     def copyFiles(self, graphPath, destPath, tag):
+        """Copy graph files to given directory."""
+
         if not os.path.exists(destPath):
             os.makedirs(destPath)
         [shutil.copy(graphPath + f, destPath + os.path.splitext(f)[0] + tag + os.path.splitext(f)[1])
@@ -647,4 +769,5 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
+"""EOF"""
 """EOF"""

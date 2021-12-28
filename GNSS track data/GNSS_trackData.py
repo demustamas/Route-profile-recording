@@ -13,7 +13,7 @@ import numpy as np
 from scipy.signal import butter, filtfilt
 from scipy.interpolate import interp1d, UnivariateSpline
 
-from matplotlib import pyplot as plt
+from matplotlib import pyplot
 
 import os
 
@@ -26,9 +26,9 @@ working_dir = "Results/Test/"
 graph_dir = "Graphs/"
 destination_dir = "ToCopy/"
 name_tag = ""
-palette = plt.cm.tab10
+palette = pyplot.cm.tab10
 palette = palette(range(palette.N))
-plt.style.use('mplstyle.work')
+pyplot.style.use('mplstyle.work')
 
 """PATH"""
 
@@ -146,10 +146,13 @@ class Realizations:
 
         print("Altitude piece-wise approximation done.")
 
-        self.avRealization['alt_grad'] = np.gradient(
-            self.avRealization.alt_lin, self.avRealization.s)
-
-        self.avRealization.alt_grad.fillna(method='ffill', inplace=True)
+        cond = self.avRealization.s.shift() != self.avRealization.s
+        self.avRealization['alt_grad'] = np.nan
+        grad = self.avRealization.alt_grad.copy()
+        grad.loc[cond] = np.gradient(
+            self.avRealization.alt_lin.loc[cond], self.avRealization.s.loc[cond])
+        grad.fillna(method='ffill', inplace=True)
+        self.avRealization.alt_grad = grad
 
         print("Altitude gradient calculated.")
 
@@ -206,7 +209,7 @@ class Realizations:
 
         con = sql.connect(os.path.join(wdir, "condRealizations.db"))
         for each in self.condRealizations:
-            each.to_sql(each['Track name'].iloc[0], con,
+            each.to_sql(each['Track_name'].iloc[0], con,
                         if_exists='replace', index=False)
         con.close()
 
@@ -221,5 +224,4 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
-"""EOF"""
 """EOF"""

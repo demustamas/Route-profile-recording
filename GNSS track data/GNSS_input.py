@@ -145,9 +145,9 @@ class Realizations:
                 self.rawRealizations.append(
                     pd.DataFrame(
                         columns=[
-                            "Track index",
-                            "Track name",
-                            "Segment index",
+                            "Track_index",
+                            "Track_name",
+                            "Segment_index",
                             "time",
                             "lon",
                             "lat",
@@ -193,9 +193,9 @@ class Realizations:
                 )
                 self.rawRealizations[-1].s = 0.0
                 self.rawRealizations[-1].a = 0.0
-                self.rawRealizations[-1]["Track index"] = 1
-                self.rawRealizations[-1]["Track name"] = file_instance
-                self.rawRealizations[-1]["Segment index"] = 1
+                self.rawRealizations[-1]["Track_index"] = 1
+                self.rawRealizations[-1]["Track_name"] = file_instance
+                self.rawRealizations[-1]["Segment_index"] = 1
                 df_t = self.rawRealizations[-1].t.copy().astype(float)
                 df_s = self.rawRealizations[-1].s.copy().astype(float)
 
@@ -240,9 +240,9 @@ class Realizations:
                 self.rawRealizations.append(
                     pd.DataFrame(
                         columns=[
-                            "Track index",
-                            "Track name",
-                            "Segment index",
+                            "Track_index",
+                            "Track_name",
+                            "Segment_index",
                             "time",
                             "lon",
                             "lat",
@@ -288,9 +288,9 @@ class Realizations:
                 )
                 self.rawRealizations[-1].s = 0.0
                 self.rawRealizations[-1].a = 0.0
-                self.rawRealizations[-1]["Track index"] = 1
-                self.rawRealizations[-1]["Track name"] = file_instance
-                self.rawRealizations[-1]["Segment index"] = 1
+                self.rawRealizations[-1]["Track_index"] = 1
+                self.rawRealizations[-1]["Track_name"] = file_instance
+                self.rawRealizations[-1]["Segment_index"] = 1
 
                 df_t = self.rawRealizations[-1].t.copy().astype(float)
                 df_s = self.rawRealizations[-1].s.copy().astype(float)
@@ -338,9 +338,9 @@ class Realizations:
                     self.rawRealizations.append(
                         pd.DataFrame(
                             columns=[
-                                "Track index",
-                                "Track name",
-                                "Segment index",
+                                "Track_index",
+                                "Track_name",
+                                "Segment_index",
                                 "time",
                                 "lon",
                                 "lat",
@@ -398,9 +398,9 @@ class Realizations:
 
                             self.rawRealizations[-1] = self.rawRealizations[-1].append(
                                 {
-                                    "Track index": track_idx,
-                                    "Track name": track.name,
-                                    "Segment index": seg_idx,
+                                    "Track_index": track_idx,
+                                    "Track_name": track.name,
+                                    "Segment_index": seg_idx,
                                     "time": point.time,
                                     "lon": point.longitude,
                                     "lat": point.latitude,
@@ -439,8 +439,8 @@ class Realizations:
     def saveToDatabase(self, db_path):
         con = sql.connect(db_path)
         for each in self.rawRealizations:
-            print(f"Uploading {each['Track name'].iloc[0]} to database.")
-            each.to_sql(each['Track name'].iloc[0], con,
+            print(f"Uploading {each['Track_name'].iloc[0]} to database.")
+            each.to_sql(each['Track_name'].iloc[0], con,
                         if_exists='replace', index=False)
         print("Uploading new entries to database recordings list.")
         self.newRecordings.to_sql(

@@ -164,7 +164,7 @@ class Realizations:
             cols = ['alt', 'v']
             for idx, each in enumerate(self.rawRealizations):
                 fig, ax = pyplot.subplots(2, 2)
-                fig.suptitle(each['Track name'].iloc[0])
+                fig.suptitle(each['Track_name'].iloc[0])
                 for col_idx, col in enumerate(cols):
                     ax[col_idx, 0].plot(each.s, each[col],
                                         color='green', label=col)
@@ -183,7 +183,7 @@ class Realizations:
             self.sumRealization[each] = self.condRealizations[0][each]
         if fit_curves:
             print(
-                f"{self.condRealizations[0]['Track name'].iloc[0]} aggregated.")
+                f"{self.condRealizations[0]['Track_name'].iloc[0]} aggregated.")
         else:
             print("Curves not fitted!")
 
@@ -248,7 +248,7 @@ class Realizations:
                 self.condRealizations[idx].s += offset - \
                     self.condRealizations[idx].s.iloc[0]
                 print(
-                    f"{self.condRealizations[idx]['Track name'].iloc[0]} aggregated.")
+                    f"{self.condRealizations[idx]['Track_name'].iloc[0]} aggregated.")
 
             """Merge dataset."""
             df = df.append(
@@ -272,13 +272,13 @@ class Realizations:
 
         con = sql.connect(os.path.join(wdir, "rawRealizations.db"))
         for each in self.rawRealizations:
-            each.to_sql(each['Track name'].iloc[0], con,
+            each.to_sql(each['Track_name'].iloc[0], con,
                         if_exists='replace', index=False)
         con.close()
 
         con = sql.connect(os.path.join(wdir, "condRealizations.db"))
         for each in self.condRealizations:
-            each.to_sql(each['Track name'].iloc[0], con,
+            each.to_sql(each['Track_name'].iloc[0], con,
                         if_exists='replace', index=False)
         con.close()
 
@@ -296,7 +296,7 @@ class Realizations:
         self.query.to_sql("query", con, if_exists='replace', index=False)
         con.close()
 
-        print("\nCalculated data saved.")
+        print("Calculated data saved.")
 
 
 """Calling simulation model to calculate."""
