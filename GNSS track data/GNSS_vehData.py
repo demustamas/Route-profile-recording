@@ -10,7 +10,7 @@ import sqlite3 as sql
 import pandas as pd
 import numpy as np
 
-from matplotlib import pyplot as plt
+from matplotlib import pyplot
 
 import os
 
@@ -22,21 +22,22 @@ working_dir = "Results/Test/"
 graph_dir = "Graphs/"
 destination_dir = "ToCopy/"
 name_tag = ""
-palette = plt.cm.tab10
+palette = pyplot.cm.tab10
 palette = palette(range(palette.N))
-plt.style.use('mplstyle.work')
+pyplot.style.use('mplstyle.work')
 
 """PATH"""
 
 working_path = working_dir
 
+if os.path.exists(os.path.join(working_path, "controlMatrices.npz")):
+    os.remove(os.path.join(working_path, "controlMatrices.npz"))
 
 """Main simulation"""
 
 
 def main():
     """Calling simulation model."""
-
     Model.queryRealizations(working_path)
     Model.calcVehicleResistance()
     Model.calcTraction(graph=False)
@@ -56,8 +57,12 @@ class Realizations:
         self.condRealizations = []
         self.sumRealization = pd.DataFrame()
         self.avRealization = pd.DataFrame()
-        self.tractionMatrix = []
-        self.brakeMatrix = []
+        self.controlMatrix = []
+        self.controlMatrixSum = []
+        self.controlMatrixNorm = []
+        self.controlMatrixSumNorm = []
+        self.controlDuration = []
+        self.controlDurationSum = []
 
     def queryRealizations(self, wPath):
         con = sql.connect(wPath + "query.db")
@@ -112,7 +117,7 @@ class Realizations:
 
         if graph:
             for idx, each in enumerate(self.condRealizations):
-                fig, ax = plt.subplots(3, 1)
+                fig, ax = pyplot.subplots(3, 1)
                 ax[0].plot(each.s, each.F_traction,
                            label=(str(self.query.dateTime.iloc[idx]) + " / " + str(self.query.receiverType.iloc[idx])))
                 ax[1].plot(each.s, each.a*100)
@@ -129,40 +134,70 @@ class Realizations:
         """Calculate control matrix."""
 
         limit = 0
+        N_steps = 9
+        control = ['traction', 'brake']
 
         for each in self.condRealizations:
             limit = np.maximum(limit, each.F_traction.abs().max())
-
-        steps = np.linspace(0, limit, 8, endpoint=True)
+        steps = np.linspace(0, limit, N_steps, endpoint=True)
         N = len(steps)
 
+        for _ in control:
+            self.controlMatrixSum.append(np.zeros(N*N).reshape(N, N))
+            self.controlMatrixSumNorm.append(np.zeros(N*N).reshape(N, N))
+            self.controlDurationSum.append([np.array([]) for x in range(N)])
+
         for each in self.condRealizations:
-            traction = each.F_traction.copy()
-            brake = each.F_traction.copy()
-            traction[traction < 0] = 0
-            brake[brake > 0] = 0
-            for idx in np.arange(len(steps[1:])):
-                traction[traction.between(
-                    steps[idx], steps[idx+1])] = idx
-                brake[brake.abs().between(steps[idx],
-                                          steps[idx+1])] = -idx
-            each['traction'] = traction
-            each['brake'] = brake
+            self.controlMatrix.append([])
+            self.controlMatrixNorm.append([])
+            self.controlDuration.append([])
+            for ctrlIdx, ctrl in enumerate(control):
+                control_func = each.F_traction.copy()
+# !!! Így a control func kitörli az ellentétes vezérléseket és megtéveszt,
+# hogy hol fut szabadon a jármű, a control_func-t nem szabad nullázni
+# -steps-től +steps-ig kell osztályokba sorolni és azt kell kiértékelni
+                if ctrl == 'traction':
+                    control_func[control_func < 0] = 0
+                if ctrl == 'brake':
+                    control_func[control_func > 0] = 0
+                for idx in range(len(steps[1:])):
+                    control_func[control_func.abs().between(
+                        steps[idx], steps[idx+1])] = idx
+                each[ctrl] = control_func
 
-            self.tractionMatrix.append(np.zeros(N*N).reshape(N, N))
-            self.brakeMatrix.append(np.zeros(N*N).reshape(N, N))
+                self.controlMatrix[-1].append(np.zeros(N*N).reshape(N, N))
+                self.controlMatrixNorm[-1].append(np.zeros(N*N).reshape(N, N))
+                self.controlDuration[-1].append([np.array([])
+                                                for x in range(N)])
 
-            traction = traction.to_numpy()
-            brake = brake.to_numpy()
-# !!! Betenni a fékezési control mátrixot
-            row = np.where(traction[:-1] != traction[1:])[0]
-            column = row + 1
-            coord = list(zip(traction[row].astype(
-                int), traction[column].astype(int)))
-            counter = dict((i, coord.count(i)) for i in coord)
+                control_func = control_func.to_numpy(dtype=int)
+                row = np.where(control_func[:-1] != control_func[1:])[0]
+                column = row + 1
+                coord = list(
+                    zip(control_func[row], control_func[column]))
+                counter = dict((i, coord.count(i)) for i in coord)
 
-            for key, value in counter.items():
-                self.tractionMatrix[-1][key] = value
+                for key, value in counter.items():
+                    self.controlMatrix[-1][ctrlIdx][key] = value
+                    self.controlMatrixSum[ctrlIdx][key] += value
+
+                for j in range(N):
+                    if self.controlMatrix[-1][ctrlIdx][j].sum() != 0:
+                        self.controlMatrixNorm[-1][ctrlIdx][j] = self.controlMatrix[-1][ctrlIdx][j] / \
+                            self.controlMatrix[-1][ctrlIdx][j].sum()
+
+                time_col = each.t.to_numpy()
+                time = time_col[column[1:]-1] - time_col[column[:-1]]
+                for idx in range(len(steps)):
+                    self.controlDuration[-1][ctrlIdx][idx] = time[control_func[column[1:]-1] == idx]
+                    self.controlDurationSum[ctrlIdx][idx] = np.append(self.controlDurationSum[ctrlIdx][idx],
+                                                                      self.controlDuration[-1][ctrlIdx][idx])
+
+        for idx in np.arange(len(control)):
+            for j in range(N):
+                if self.controlMatrixSum[idx][j].sum() != 0:
+                    self.controlMatrixSumNorm[idx][j] = self.controlMatrixSum[idx][j] / \
+                        self.controlMatrixSum[idx][j].sum()
 
         print("\nControl matrices generated.")
 
@@ -171,7 +206,7 @@ class Realizations:
 
         con = sql.connect(os.path.join(wdir, "condRealizations.db"))
         for each in self.condRealizations:
-            each.to_sql(each['Track name'].iloc[0], con,
+            each.to_sql(each['Track_name'].iloc[0], con,
                         if_exists='replace', index=False)
         con.close()
 
@@ -180,10 +215,31 @@ class Realizations:
             "av", con, if_exists='replace', index=False)
         con.close()
 
+        arrayFile = os.path.join(wdir, "controlMatrices.npz")
+        control = ['traction_', 'brake_']
+        dataset = {}
+        for i, ctrl in enumerate(control):
+            for idx, each in enumerate(self.condRealizations):
+                dataset['controlMatrix_' + ctrl +
+                        each['Track_name'].iloc[0]] = self.controlMatrix[idx][i]
+                dataset['controlMatrixNorm_' + ctrl +
+                        each['Track_name'].iloc[0]] = self.controlMatrixNorm[idx][i]
+                dataset['controlDuration_' + ctrl +
+                        each['Track_name'].iloc[0]] = np.array(self.controlDuration[idx][i], dtype=object)
+            dataset['controlMatrixSum_' + ctrl +
+                    each['Track_name'].iloc[0]] = self.controlMatrixSum[i]
+            dataset['controlMatrixSumNorm_' + ctrl +
+                    each['Track_name'].iloc[0]] = self.controlMatrixSumNorm[i]
+            dataset['controlDurationSum_' + ctrl +
+                    each['Track_name'].iloc[0]] = np.array(self.controlDurationSum[i], dtype=object)
+
+        np.savez(arrayFile, **dataset)
+
         print("\nCalculated data saved.")
 
 
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
+"""EOF"""
 """EOF"""
