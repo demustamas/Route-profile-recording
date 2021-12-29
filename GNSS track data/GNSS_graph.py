@@ -68,8 +68,8 @@ def main():
     # Model.altitudeGraph(graph_path)
     # Model.speedGraph(graph_path)
     # Model.accuracyGraph(graph_path)
-    # Model.mapGraph(graph_path)
-    # Model.characteristicsGraph(graph_path)
+    Model.mapGraph(graph_path)
+    Model.characteristicsGraph(graph_path)
     Model.trackGraph(graph_path)
     Model.vehGraph(graph_path)
     Model.controlMatrixGraph(graph_path)
@@ -527,7 +527,7 @@ class Realizations:
                 ]:
                     fig.append(
                         bkh.figure(
-                            title=track.loc[0, "Track_name"],
+                            title=track.loc[0, "trackName"],
                             title_location="left",
                             plot_height=250,
                         )
@@ -544,7 +544,7 @@ class Realizations:
             ]:
                 fig.append(
                     bkh.figure(
-                        title=track.loc[0, "Track_name"],
+                        title=track.loc[0, "trackName"],
                         title_location="left",
                         plot_height=250,
                     )
@@ -659,7 +659,7 @@ class Realizations:
         for each in self.condRealizations:
             fig_sum.append(bkh.figure(
                 plot_height=250,
-                title=each.loc[0, "Track_name"],
+                title=each.loc[0, "trackName"],
                 title_location="left",))
             fig_sum[k].extra_y_ranges = {"secondary": Range1d(
                 start=-max(each.brake)-1, end=10 * max(each.traction)+1)}
@@ -738,7 +738,7 @@ class Realizations:
             ax = gsub.subplots()
             ax = ax.flat
             for idx, each in enumerate(self.controlDurationSum[ctrlIdx]):
-                if each.size != 0:
+                if each.size > 1:
                     ax[idx].hist(each, bins=20, density=True)
                     params = ss.expon.fit(each)
                     print(

@@ -44,6 +44,7 @@ def main():
 
     Model.initDatabase(database_path, GNSS_files, list_of_recordings)
     Model.loadRealization(recordings_path)
+    Model.calcRawRealization()
     Model.saveToDatabase(database_path)
 
 
@@ -101,7 +102,7 @@ class Realizations:
 
         con.close()
         pd.set_option('display.max_columns', None)
-        print("\nDatabase content:")
+        print("Database content:")
         print(db_recs)
 
         print(
@@ -119,11 +120,11 @@ class Realizations:
                 self.newRecordings.drop(
                     self.newRecordings.loc[self.newRecordings.fileName == each].index, inplace=True)
 
-        print("\nNew recordings found:")
-        print(self.newRecordings)
         if not self.newRecordings.empty:
+            print("\nNew recordings found:")
+            print(self.newRecordings)
             ans = input("\nContinue with database update? (y/n): ")
-            if ans == 'y' or ans == '':
+            if ans == 'y' or ans == 'Y' or ans == '':
                 print("\nUpdating database.\n")
             else:
                 print("\nExiting.\n")
@@ -134,49 +135,60 @@ class Realizations:
 
     def loadRealization(self, recPath):
         """Load and calculate GNSS data from file."""
+        print("Loading GNSS data:")
         for file_idx, file_instance in enumerate(self.newRecordings.fileName):
             file = os.path.join(recPath, file_instance)
+            self.rawRealizations.append(
+                pd.DataFrame(
+                    columns=[
+                        "trackName",
+                        "lon",
+                        "lat",
+                        "alt",
+                        "hdop",
+                        "vdop",
+                        "pdop",
+                        "nSAT",
+                        "v",
+                        "t",
+                        "s",
+                        "a",
+                    ]
+                )
+            )
+
             if file_instance.endswith("UBX.CSV") or file_instance.endswith("UBX.csv") or file_instance.startswith("UBX"):
                 try:
+                    fileType = "UBX"
+                    samplingFreq = 5
                     df = pd.read_csv(file)
                 except FileNotFoundError:
                     print(f"{file_instance} Track data: File not found!")
                     sys.exit()
-                self.rawRealizations.append(
-                    pd.DataFrame(
-                        columns=[
-                            "Track_index",
-                            "Track_name",
-                            "Segment_index",
-                            "time",
-                            "lon",
-                            "lat",
-                            "alt",
-                            "hdop",
-                            "vdop",
-                            "pdop",
-                            "nSAT",
-                            "hAcc",
-                            "vAcc",
-                            "sAcc",
-                            "v",
-                            "t",
-                            "s",
-                            "a",
-                        ]
-                    )
-                )
+            elif file_instance.endswith("PMTK.CSV") or file_instance.endswith("PMTK.csv") or file_instance.startswith("PMTK"):
+                try:
+                    fileType = "PMTK"
+                    samplingFreq = 10
+                    df = pd.read_csv(file)
+                except FileNotFoundError:
+                    print(f"{file_instance} Track data: File not found!")
+                    sys.exit()
+            elif file_instance.endswith(".gpx"):
+                try:
+                    fileType = "GPX"
+                    samplingFreq = 1
+                    gpx_file = open(file, "r")
+                    gpx = gpxpy.parse(gpx_file)
+                except FileNotFoundError:
+                    print(f"{file_instance} Track data: File not found!")
+                    sys.exit()
+            else:
+                print(f"Unknown file format {file_instance}!")
+                sys.exit()
+
+            if fileType == "UBX":
                 t0 = df.Hour.iloc[0] * 3600 + \
                     df.Minute.iloc[0] * 60 + df.Second.iloc[0]
-
-                self.rawRealizations[-1].time = (
-                    df.Year.astype(str)
-                    + df.Month.astype(str)
-                    + df.Day.astype(str)
-                    + df.Hour.astype(str)
-                    + df.Minute.astype(str)
-                    + df.Second.astype(str)
-                )
                 self.rawRealizations[-1].lon = df.Lon / 1.0e7
                 self.rawRealizations[-1].lat = df.Lat / 1.0e7
                 self.rawRealizations[-1].alt = df.Alt2 / 1.0e3
@@ -184,263 +196,92 @@ class Realizations:
                 self.rawRealizations[-1].vdop = 0.0
                 self.rawRealizations[-1].pdop = df.PDOP / 1.0e2
                 self.rawRealizations[-1].nSAT = df.nSAT
-                self.rawRealizations[-1].hAcc = df.hAcc / 1.0e3
-                self.rawRealizations[-1].vAcc = df.vAcc / 1.0e3
-                self.rawRealizations[-1].sAcc = df.speedAcc / 1.0e3
                 self.rawRealizations[-1].v = df.speed / 1.0e3
                 self.rawRealizations[-1].t = (
                     df.Hour * 3600 + df.Minute * 60 + df.Second - t0
                 )
-                self.rawRealizations[-1].s = 0.0
-                self.rawRealizations[-1].a = 0.0
-                self.rawRealizations[-1]["Track_index"] = 1
-                self.rawRealizations[-1]["Track_name"] = file_instance
-                self.rawRealizations[-1]["Segment_index"] = 1
-                df_t = self.rawRealizations[-1].t.copy().astype(float)
-                df_s = self.rawRealizations[-1].s.copy().astype(float)
-
-                t_offset = 0.0
-                for i in np.arange(1, len(df_t)):
-                    if df_t[i] == t_offset:
-                        df_t[i] = df_t[i - 1] + 0.2
-                    else:
-                        t_offset = df_t[i]
-
-                    node1 = Point(
-                        df.Lat.iloc[i] / 1.0e7,
-                        df.Lon.iloc[i] / 1.0e7,
-                    )
-                    node2 = Point(
-                        df.Lat.iloc[i - 1] / 1.0e7,
-                        df.Lon.iloc[i - 1] / 1.0e7,
-                    )
-                    df_s[i] = np.sqrt(
-                        (gdist(node1, node2).m) ** 2
-                        + ((df.Alt2.iloc[i] -
-                           df.Alt2.iloc[i - 1]) / 1.0e3) ** 2
-                    )
-
-                df_s = np.cumsum(df_s)
-
-                self.rawRealizations[-1].t = df_t
-                self.rawRealizations[-1].s = df_s
-                self.rawRealizations[-1].a = np.gradient(
-                    self.rawRealizations[-1].v, self.rawRealizations[-1].t
-                )
-
-                point_no = len(self.rawRealizations[-1].index)
-                print(f"Loaded {point_no} points from file {file_instance}")
-
-            if file_instance.endswith("PMTK.CSV") or file_instance.endswith("PMTK.csv") or file_instance.startswith("PMTK"):
-                try:
-                    df = pd.read_csv(file)
-                except FileNotFoundError:
-                    print(f"{file_instance} Track data: File not found!")
-                    sys.exit()
-                self.rawRealizations.append(
-                    pd.DataFrame(
-                        columns=[
-                            "Track_index",
-                            "Track_name",
-                            "Segment_index",
-                            "time",
-                            "lon",
-                            "lat",
-                            "alt",
-                            "hdop",
-                            "vdop",
-                            "pdop",
-                            "nSAT",
-                            "hAcc",
-                            "vAcc",
-                            "sAcc",
-                            "v",
-                            "t",
-                            "s",
-                            "a",
-                        ]
-                    )
-                )
+            elif fileType == "PMTK":
                 t0 = df.Hour.iloc[0] * 3600 + \
                     df.Minute.iloc[0] * 60 + df.Second.iloc[0]
-
-                self.rawRealizations[-1].time = (
-                    df.Year.astype(str)
-                    + df.Month.astype(str)
-                    + df.Day.astype(str)
-                    + df.Hour.astype(str)
-                    + df.Minute.astype(str)
-                    + df.Second.astype(str)
-                )
                 self.rawRealizations[-1].lon = df.Lon
                 self.rawRealizations[-1].lat = df.Lat
                 self.rawRealizations[-1].alt = df.Alt
                 self.rawRealizations[-1].hdop = df.hDOP / 100
                 self.rawRealizations[-1].vdop = 0.0
                 self.rawRealizations[-1].pdop = 0.0
-                self.rawRealizations[-1].hAcc = 0.0
-                self.rawRealizations[-1].vAcc = 0.0
-                self.rawRealizations[-1].sAcc = 0.0
                 self.rawRealizations[-1].nSAT = df.nSAT
                 self.rawRealizations[-1].v = df.Speed
                 self.rawRealizations[-1].t = (
                     df.Hour * 3600 + df.Minute * 60 + df.Second - t0
                 )
-                self.rawRealizations[-1].s = 0.0
-                self.rawRealizations[-1].a = 0.0
-                self.rawRealizations[-1]["Track_index"] = 1
-                self.rawRealizations[-1]["Track_name"] = file_instance
-                self.rawRealizations[-1]["Segment_index"] = 1
-
-                df_t = self.rawRealizations[-1].t.copy().astype(float)
-                df_s = self.rawRealizations[-1].s.copy().astype(float)
-
-                t_offset = 0.0
-                for i in np.arange(1, len(df_t)):
-                    if df_t[i] == t_offset:
-                        df_t[i] = df_t[i - 1] + 0.1
-                    else:
-                        t_offset = df_t[i]
-
-                    node1 = Point(
-                        df.Lat.iloc[i],
-                        df.Lon.iloc[i],
-                    )
-                    node2 = Point(
-                        df.Lat.iloc[i - 1],
-                        df.Lon.iloc[i - 1],
-                    )
-                    df_s[i] = np.sqrt(
-                        (gdist(node1, node2).m) ** 2
-                        + ((df.Alt.iloc[i] - df.Alt.iloc[i - 1])) ** 2
-                    )
-
-                df_s = np.cumsum(df_s)
-
-                self.rawRealizations[-1].t = df_t
-                self.rawRealizations[-1].s = df_s
-                self.rawRealizations[-1].a = np.gradient(
-                    self.rawRealizations[-1].v, self.rawRealizations[-1].t
-                )
-
-                point_no = len(self.rawRealizations[-1].index)
-                print(f"Loaded {point_no} points from file {file_instance}")
-
-            if file_instance.endswith(".gpx"):
-                try:
-                    gpx_file = open(file, "r")
-                except FileNotFoundError:
-                    print(f"{file_instance} Track data: File not found!")
-                    sys.exit()
-                gpx = gpxpy.parse(gpx_file)
-
-                for track_idx, track in enumerate(gpx.tracks):
-                    self.rawRealizations.append(
-                        pd.DataFrame(
-                            columns=[
-                                "Track_index",
-                                "Track_name",
-                                "Segment_index",
-                                "time",
-                                "lon",
-                                "lat",
-                                "alt",
-                                "hdop",
-                                "vdop",
-                                "pdop",
-                                "nSAT",
-                                "hAcc",
-                                "vAcc",
-                                "sAcc",
-                                "v",
-                                "t",
-                                "s",
-                                "a",
-                            ]
-                        )
-                    )
-                    track.name = file_instance
-
-                    for seg_idx, segment in enumerate(track.segments):
-                        for point_idx, point in enumerate(segment.points):
-                            t = point.time_difference(
-                                gpx.tracks[track_idx].segments[seg_idx].points[0]
-                            )
-                            if point_idx > 0:
-                                s = (
-                                    point.distance_3d(
-                                        gpx.tracks[track_idx]
-                                        .segments[seg_idx]
-                                        .points[point_idx - 1]
-                                    )
-                                    + self.rawRealizations[-1].s[point_idx - 1]
-                                )
-                                if point.speed == None:
-                                    point.speed = point.speed_between(
-                                        gpx.tracks[track_idx]
-                                        .segments[seg_idx]
-                                        .points[point_idx - 1]
-                                    )
-                                    if point.speed == None:
-                                        point.speed = (
-                                            gpx.tracks[track_idx]
-                                            .segments[seg_idx]
-                                            .points[point_idx - 1]
-                                            .speed
-                                        )
-
-                            else:
-                                s = 0.0
-                                t = 0.0
-                                point.v = 0.0
-                                if point.speed == None:
-                                    point.speed = 0.0
-
-                            self.rawRealizations[-1] = self.rawRealizations[-1].append(
-                                {
-                                    "Track_index": track_idx,
-                                    "Track_name": track.name,
-                                    "Segment_index": seg_idx,
-                                    "time": point.time,
-                                    "lon": point.longitude,
-                                    "lat": point.latitude,
-                                    "alt": point.elevation,
-                                    "hdop": point.horizontal_dilution,
-                                    "vdop": point.vertical_dilution,
-                                    "pdop": 0.0,
-                                    "nSAT": 0,
-                                    "hAcc": 0.0,
-                                    "vAcc": 0.0,
-                                    "sAcc": 0.0,
-                                    "v": point.speed,
-                                    "t": t,
-                                    "s": s,
-                                    "a": 0.0,
-                                },
-                                ignore_index=True,
-                            )
-
-                        self.rawRealizations[-1].a = np.gradient(
-                            self.rawRealizations[-1].v, self.rawRealizations[-1].t
-                        )
-
-                        point_no = len(segment.points)
-                        print(
-                            f"Loaded {point_no} points from segment {seg_idx}, track {track_idx}, file {file_instance}"
-                        )
+            elif fileType == "GPX":
+                segment = gpx.tracks[0].segments[0]
+                self.rawRealizations[-1].lon = [x.longitude for x in segment.points]
+                self.rawRealizations[-1].lat = [x.latitude for x in segment.points]
+                self.rawRealizations[-1].alt = [x.elevation for x in segment.points]
+                self.rawRealizations[-1].hdop = [
+                    x.horizontal_dilution for x in segment.points]
+                self.rawRealizations[-1].vdop = [
+                    x.vertical_dilution for x in segment.points]
+                self.rawRealizations[-1].pdop = 0.0
+                self.rawRealizations[-1].nSAT = 0.0
+                self.rawRealizations[-1].t = [x.time_difference(
+                    segment.points[0]) for x in segment.points]
+                self.rawRealizations[-1].v = [x.speed for x in segment.points]
                 gpx_file.close()
 
-        for track in self.rawRealizations:
-            track.s /= 1000
-            track.v *= 3.6
+            self.rawRealizations[-1].s = 0.0
+            self.rawRealizations[-1].a = np.nan
+            self.rawRealizations[-1]["trackName"] = file_instance
 
-        print("\nGNSS data loaded.\n")
+            df_t = self.rawRealizations[-1].t.copy().astype(float).to_numpy()
+            for i in range(samplingFreq-1):
+                cond = df_t[1:] == df_t[:-1]
+                cond = np.insert(cond, 0, False)
+                df_t[cond] += 1 / samplingFreq
+            self.rawRealizations[-1].t = df_t
+
+            point_no = len(self.rawRealizations[-1].index)
+            print(f"\t\tLoaded {point_no} points from file {file_instance}")
+
+    def calcRawRealization(self):
+        """Calculate basic data for rawRealizations."""
+        print("Calculating missing raw data:")
+        for each in self.rawRealizations:
+            df_lat = each.lat.copy().astype(float).to_numpy()
+            df_lon = each.lon.copy().astype(float).to_numpy()
+            df_alt = each.alt.copy().astype(float).to_numpy()
+            node1 = list(map(Point, zip(df_lat[1:], df_lon[1:])))
+            node2 = list(map(Point, zip(df_lat[:-1], df_lon[:-1])))
+            dist = [x.m for x in list(map(gdist, node1, node2))]
+            dist = np.sqrt(np.array(dist) ** 2 +
+                           (df_alt[1:] - df_alt[:-1]) ** 2)
+            dist = np.insert(dist, 0, 0.0)
+            each.s = np.cumsum(dist)
+
+            cond = each.t.shift() != each.t
+
+            if each.v.isna().any():
+                vel = each.v.copy()
+                vel.loc[cond] = np.gradient(each.s.loc[cond], each.t.loc[cond])
+                vel.fillna(method='ffill', inplace=True)
+                each.v = vel
+            acc = each.a.copy()
+            acc.loc[cond] = np.gradient(each.v.loc[cond], each.t.loc[cond])
+            acc.fillna(method='ffill', inplace=True)
+            each.a = acc
+            each.s /= 1000
+            each.v *= 3.6
+
+            print(each.head())
+        print("Missing raw data calculation done.\n")
 
     def saveToDatabase(self, db_path):
         con = sql.connect(db_path)
+        print("Uploading raw realizations to database:")
         for each in self.rawRealizations:
-            print(f"Uploading {each['Track_name'].iloc[0]} to database.")
-            each.to_sql(each['Track_name'].iloc[0], con,
+            print(f"\t\tUploading {each['trackName'].iloc[0]} to database.")
+            each.to_sql(each['trackName'].iloc[0], con,
                         if_exists='replace', index=False)
         print("Uploading new entries to database recordings list.")
         self.newRecordings.to_sql(

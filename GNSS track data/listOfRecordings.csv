@@ -56,3 +56,6 @@ moGPXTracker_20211210132955.gpx,route,2021/12/10 13:29:55,Keleti,Füzesabony,V63
 PMTK1014.csv,route,2021/12/12 19:34:04,Füzesabony,Keleti,FLIRT,IR,MTK 3339
 UBX10007.csv,route,2021/12/12 19:34:04,Füzesabony,Keleti,FLIRT,IR,U-blox M8N
 moGPXTracker_20211212193404.gpx,route,2021/12/12 19:34:04,Füzesabony,Keleti,FLIRT,IR,IPhone 11 Pro
+PMTK1018.csv,route,2021/12/23 12:00:08,Keleti,Füzesabony,FLIRT+FLIRT,IR,MTK 3339
+UBX10008.csv,route,2021/12/23 12:00:08,Keleti,Füzesabony,FLIRT+FLIRT,IR,U-blox M8N
+moGPXTracker_20211223120008.gpx,route,2021/12/23 12:00:08,Keleti,Füzesabony,FLIRT+FLIRT,IR,IPhone 11 Pro

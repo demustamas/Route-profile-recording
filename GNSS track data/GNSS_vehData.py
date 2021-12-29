@@ -193,7 +193,7 @@ class Realizations:
                     self.controlDurationSum[ctrlIdx][idx] = np.append(self.controlDurationSum[ctrlIdx][idx],
                                                                       self.controlDuration[-1][ctrlIdx][idx])
 
-        for idx in np.arange(len(control)):
+        for idx in range(len(control)):
             for j in range(N):
                 if self.controlMatrixSum[idx][j].sum() != 0:
                     self.controlMatrixSumNorm[idx][j] = self.controlMatrixSum[idx][j] / \
@@ -206,7 +206,7 @@ class Realizations:
 
         con = sql.connect(os.path.join(wdir, "condRealizations.db"))
         for each in self.condRealizations:
-            each.to_sql(each['Track_name'].iloc[0], con,
+            each.to_sql(each['trackName'].iloc[0], con,
                         if_exists='replace', index=False)
         con.close()
 
@@ -221,17 +221,17 @@ class Realizations:
         for i, ctrl in enumerate(control):
             for idx, each in enumerate(self.condRealizations):
                 dataset['controlMatrix_' + ctrl +
-                        each['Track_name'].iloc[0]] = self.controlMatrix[idx][i]
+                        each['trackName'].iloc[0]] = self.controlMatrix[idx][i]
                 dataset['controlMatrixNorm_' + ctrl +
-                        each['Track_name'].iloc[0]] = self.controlMatrixNorm[idx][i]
+                        each['trackName'].iloc[0]] = self.controlMatrixNorm[idx][i]
                 dataset['controlDuration_' + ctrl +
-                        each['Track_name'].iloc[0]] = np.array(self.controlDuration[idx][i], dtype=object)
+                        each['trackName'].iloc[0]] = np.array(self.controlDuration[idx][i], dtype=object)
             dataset['controlMatrixSum_' + ctrl +
-                    each['Track_name'].iloc[0]] = self.controlMatrixSum[i]
+                    each['trackName'].iloc[0]] = self.controlMatrixSum[i]
             dataset['controlMatrixSumNorm_' + ctrl +
-                    each['Track_name'].iloc[0]] = self.controlMatrixSumNorm[i]
+                    each['trackName'].iloc[0]] = self.controlMatrixSumNorm[i]
             dataset['controlDurationSum_' + ctrl +
-                    each['Track_name'].iloc[0]] = np.array(self.controlDurationSum[i], dtype=object)
+                    each['trackName'].iloc[0]] = np.array(self.controlDurationSum[i], dtype=object)
 
         np.savez(arrayFile, **dataset)
 

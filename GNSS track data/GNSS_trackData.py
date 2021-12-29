@@ -180,7 +180,7 @@ class Realizations:
         dist_i = np.append(dist_i, S_treshold*130)
         v_i[dist_i < S_treshold*v_i] = 0
 
-        for i in np.arange(1, len(v_i)-1):
+        for i in range(1, len(v_i)-1):
             if v_i[i] == 0:
                 v_i[i] = np.maximum(v_i[i-1], v_i[i+1])
 
@@ -209,7 +209,7 @@ class Realizations:
 
         con = sql.connect(os.path.join(wdir, "condRealizations.db"))
         for each in self.condRealizations:
-            each.to_sql(each['Track_name'].iloc[0], con,
+            each.to_sql(each['trackName'].iloc[0], con,
                         if_exists='replace', index=False)
         con.close()
 
