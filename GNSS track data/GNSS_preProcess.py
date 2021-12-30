@@ -32,11 +32,11 @@ working_dir = "Results/Test/"
 sql_query = """SELECT *
     FROM listOfRecordings
     WHERE recType = 'route'
-    AND (fromStation = 'Keleti' OR fromStation = 'Eger')
-    AND dateTime = '2021/12/23 12:00:08'
-    AND toStation = 'Füzesabony'
+    AND (fromStation = 'Füzesabony' OR fromStation = 'Eger')
+    AND toStation = 'Keleti'
     AND trainType = 'IR'
     AND (trainConfig = 'FLIRT' OR trainConfig = 'FLIRT+FLIRT')
+    AND receiverType = 'U-blox M8N'
     """
 
 """SELECT *

@@ -58,11 +58,11 @@ class Realizations:
         self.sumRealization = pd.DataFrame()
         self.avRealization = pd.DataFrame()
         self.controlMatrix = []
-        self.controlMatrixSum = []
         self.controlMatrixNorm = []
-        self.controlMatrixSumNorm = []
+        self.controlMatrixSum = {}
+        self.controlMatrixSumNorm = {}
         self.controlDuration = []
-        self.controlDurationSum = []
+        self.controlDurationSum = {}
 
     def queryRealizations(self, wPath):
         con = sql.connect(wPath + "query.db")
@@ -132,72 +132,78 @@ class Realizations:
 
     def calcControlMatrix(self, graph=False):
         """Calculate control matrix."""
-
         limit = 0
-        N_steps = 9
-        control = ['traction', 'brake']
+        N = 9
+        control = ['brake', 'traction']
 
         for each in self.condRealizations:
             limit = np.maximum(limit, each.F_traction.abs().max())
-        steps = np.linspace(0, limit, N_steps, endpoint=True)
-        N = len(steps)
+        steps = np.linspace(-limit, limit, 2*N, endpoint=True)
 
-        for _ in control:
-            self.controlMatrixSum.append(np.zeros(N*N).reshape(N, N))
-            self.controlMatrixSumNorm.append(np.zeros(N*N).reshape(N, N))
-            self.controlDurationSum.append([np.array([]) for x in range(N)])
+        for ctrl in control:
+            self.controlMatrixSum[ctrl] = np.zeros(N*N).reshape(N, N)
+            self.controlMatrixSumNorm[ctrl] = np.zeros(N*N).reshape(N, N)
+            self.controlDurationSum[ctrl] = [np.array([]) for x in range(N)]
 
+        M_sum = np.zeros(4*N*N).reshape(2*N, 2*N)
+        t_sum = [np.array([]) for x in range(2*N-1)]
         for each in self.condRealizations:
-            self.controlMatrix.append([])
-            self.controlMatrixNorm.append([])
-            self.controlDuration.append([])
+            self.controlMatrix.append({})
+            self.controlMatrixNorm.append({})
+            self.controlDuration.append({})
+
+            for ctrl in control:
+                self.controlMatrix[-1][ctrl] = np.zeros(N*N).reshape(N, N)
+                self.controlMatrixNorm[-1][ctrl] = np.zeros(N*N).reshape(N, N)
+                self.controlDuration[-1][ctrl] = [np.array([])
+                                                  for x in range(N)]
+
+            control_func = np.zeros(len(each))
+            for i in range(2*N-1):
+                control_func[each.F_traction.between(
+                    steps[i], steps[i+1])] = i
+
+            control_func = control_func.astype(int)
+            each['control'] = control_func
+
+            row = np.where(control_func[:-1] != control_func[1:])[0]
+            column = row + 1
+            coord = list(
+                zip(control_func[row], control_func[column]))
+            counter = dict((i, coord.count(i)) for i in coord)
+
+            M = np.zeros(4*N*N).reshape(2*N, 2*N)
+            for key, value in counter.items():
+                M[key] = value
+                M_sum[key] += value
+            M[0:N, 0:N] = np.flip(M[0:N, 0:N])
+
+            time_col = each.t.to_numpy()
+            time = time_col[column[1:]-1] - time_col[column[:-1]]
+            t = [np.array([]) for x in range(2*N-1)]
+            for i in range(2*N-1):
+                t[i] = np.append(t[i], time[control_func[column[1:]-1] == i])
+                t_sum[i] = np.append(t_sum[i], t[i])
+
             for ctrlIdx, ctrl in enumerate(control):
-                control_func = each.F_traction.copy()
-# !!! Így a control func kitörli az ellentétes vezérléseket és megtéveszt,
-# hogy hol fut szabadon a jármű, a control_func-t nem szabad nullázni
-# -steps-től +steps-ig kell osztályokba sorolni és azt kell kiértékelni
-                if ctrl == 'traction':
-                    control_func[control_func < 0] = 0
-                if ctrl == 'brake':
-                    control_func[control_func > 0] = 0
-                for idx in range(len(steps[1:])):
-                    control_func[control_func.abs().between(
-                        steps[idx], steps[idx+1])] = idx
-                each[ctrl] = control_func
+                self.controlMatrix[-1][ctrl] = M[ctrlIdx *
+                                                 (N-1):ctrlIdx*(N-1)+N, ctrlIdx*(N-1):ctrlIdx*(N-1)+N]
+                self.controlDuration[-1][ctrl] = t[N-1::2*ctrlIdx-1]
+                for i in range(N):
+                    if self.controlMatrix[-1][ctrl][i].sum() != 0:
+                        self.controlMatrixNorm[-1][ctrl][i] = self.controlMatrix[-1][ctrl][i] / \
+                            self.controlMatrix[-1][ctrl][i].sum()
 
-                self.controlMatrix[-1].append(np.zeros(N*N).reshape(N, N))
-                self.controlMatrixNorm[-1].append(np.zeros(N*N).reshape(N, N))
-                self.controlDuration[-1].append([np.array([])
-                                                for x in range(N)])
+        M_sum[0:N, 0:N] = np.flip(M_sum[0:N, 0:N])
 
-                control_func = control_func.to_numpy(dtype=int)
-                row = np.where(control_func[:-1] != control_func[1:])[0]
-                column = row + 1
-                coord = list(
-                    zip(control_func[row], control_func[column]))
-                counter = dict((i, coord.count(i)) for i in coord)
-
-                for key, value in counter.items():
-                    self.controlMatrix[-1][ctrlIdx][key] = value
-                    self.controlMatrixSum[ctrlIdx][key] += value
-
-                for j in range(N):
-                    if self.controlMatrix[-1][ctrlIdx][j].sum() != 0:
-                        self.controlMatrixNorm[-1][ctrlIdx][j] = self.controlMatrix[-1][ctrlIdx][j] / \
-                            self.controlMatrix[-1][ctrlIdx][j].sum()
-
-                time_col = each.t.to_numpy()
-                time = time_col[column[1:]-1] - time_col[column[:-1]]
-                for idx in range(len(steps)):
-                    self.controlDuration[-1][ctrlIdx][idx] = time[control_func[column[1:]-1] == idx]
-                    self.controlDurationSum[ctrlIdx][idx] = np.append(self.controlDurationSum[ctrlIdx][idx],
-                                                                      self.controlDuration[-1][ctrlIdx][idx])
-
-        for idx in range(len(control)):
-            for j in range(N):
-                if self.controlMatrixSum[idx][j].sum() != 0:
-                    self.controlMatrixSumNorm[idx][j] = self.controlMatrixSum[idx][j] / \
-                        self.controlMatrixSum[idx][j].sum()
+        for ctrlIdx, ctrl in enumerate(control):
+            self.controlMatrixSum[ctrl] = M_sum[ctrlIdx *
+                                                (N-1):ctrlIdx*(N-1)+N, ctrlIdx*(N-1):ctrlIdx*(N-1)+N]
+            self.controlDurationSum[ctrl] = t_sum[N-1::2*ctrlIdx-1]
+            for i in range(N):
+                if self.controlMatrixSum[ctrl][i].sum() != 0:
+                    self.controlMatrixSumNorm[ctrl][i] = self.controlMatrixSum[ctrl][i] / \
+                        self.controlMatrixSum[ctrl][i].sum()
 
         print("\nControl matrices generated.")
 
@@ -216,22 +222,22 @@ class Realizations:
         con.close()
 
         arrayFile = os.path.join(wdir, "controlMatrices.npz")
-        control = ['traction_', 'brake_']
+        control = ['traction', 'brake']
         dataset = {}
-        for i, ctrl in enumerate(control):
+        for ctrl in control:
             for idx, each in enumerate(self.condRealizations):
-                dataset['controlMatrix_' + ctrl +
-                        each['trackName'].iloc[0]] = self.controlMatrix[idx][i]
-                dataset['controlMatrixNorm_' + ctrl +
-                        each['trackName'].iloc[0]] = self.controlMatrixNorm[idx][i]
-                dataset['controlDuration_' + ctrl +
-                        each['trackName'].iloc[0]] = np.array(self.controlDuration[idx][i], dtype=object)
-            dataset['controlMatrixSum_' + ctrl +
-                    each['trackName'].iloc[0]] = self.controlMatrixSum[i]
-            dataset['controlMatrixSumNorm_' + ctrl +
-                    each['trackName'].iloc[0]] = self.controlMatrixSumNorm[i]
-            dataset['controlDurationSum_' + ctrl +
-                    each['trackName'].iloc[0]] = np.array(self.controlDurationSum[i], dtype=object)
+                dataset['controlMatrix_' + ctrl + '_' +
+                        each['trackName'].iloc[0]] = self.controlMatrix[idx][ctrl]
+                dataset['controlMatrixNorm_' + ctrl + '_' +
+                        each['trackName'].iloc[0]] = self.controlMatrixNorm[idx][ctrl]
+                dataset['controlDuration_' + ctrl + '_' +
+                        each['trackName'].iloc[0]] = np.array(self.controlDuration[idx][ctrl], dtype=object)
+            dataset['controlMatrixSum_' + ctrl + '_' +
+                    each['trackName'].iloc[0]] = self.controlMatrixSum[ctrl]
+            dataset['controlMatrixSumNorm_' + ctrl + '_' +
+                    each['trackName'].iloc[0]] = self.controlMatrixSumNorm[ctrl]
+            dataset['controlDurationSum_' + ctrl + '_' +
+                    each['trackName'].iloc[0]] = np.array(self.controlDurationSum[ctrl], dtype=object)
 
         np.savez(arrayFile, **dataset)
 
