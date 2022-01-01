@@ -25,7 +25,7 @@ from bokeh.models import (
 )
 
 from matplotlib import pyplot
-from matplotlib import colors as color_func
+from matplotlib import colors as mpl_color
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 
 import os
@@ -39,7 +39,7 @@ working_dir = "Results/Test/"
 station_dir = "Stations/"
 graph_dir = "Graphs/"
 destination_dir = "ToCopy/"
-name_tag = ""
+name_tag = "_20220101"
 palette = pyplot.cm.tab10
 palette = palette(range(palette.N))
 pyplot.style.use('mplstyle.work')
@@ -69,11 +69,11 @@ def main():
     # Model.speedGraph(graph_path)
     # Model.accuracyGraph(graph_path)
     # Model.mapGraph(graph_path)
-    # Model.characteristicsGraph(graph_path)
+    Model.characteristicsGraph(graph_path)
     Model.trackGraph(graph_path)
     Model.vehGraph(graph_path)
     Model.controlMatrixGraph(graph_path)
-    # Model.copyFiles(graph_path, destination_path, name_tag)
+    Model.copyFiles(graph_path, destination_path, name_tag)
 
 
 """Simulation model"""
@@ -486,7 +486,7 @@ class Realizations:
         latitude /= length
         longitude /= length
 
-        colors = iter([color_func.rgb2hex(each) for each in palette])
+        colors = iter([mpl_color.rgb2hex(each) for each in palette])
         myMap = folium.Map(
             location=[latitude, longitude], tiles="CartoDB positron")
         for track_idx, track in enumerate(self.rawRealizations):
@@ -496,7 +496,7 @@ class Realizations:
             ).add_to(myMap)
         myMap.save(os.path.join(graphPath, "map_raw.html"))
 
-        colors = iter([color_func.rgb2hex(each) for each in palette])
+        colors = iter([mpl_color.rgb2hex(each) for each in palette])
         myMap = folium.Map(
             location=[latitude, longitude], tiles="CartoDB positron")
         for track_idx, track in enumerate(self.condRealizations):
@@ -513,6 +513,7 @@ class Realizations:
         k = 0
         fig = []
         cols = ["alt", "v", "a"]
+        labels = ["Altitude [m]", "v [km/h]", "a [m/s2]"]
         linecolor = ['seagreen', 'royalblue', 'tomato']
         for idx in range(len(self.query.index)):
             for j, col in enumerate(cols):
@@ -528,9 +529,9 @@ class Realizations:
                         )
                     )
                     fig[k].line(track.s, track[col],
-                                line_color=linecolor[j], legend_label=col)
-                    fig[k].xaxis[0].axis_label = track.s.name
-                    fig[k].yaxis[0].axis_label = track[col].name
+                                line_color=linecolor[j], legend_label=labels[j])
+                    fig[k].xaxis[0].axis_label = "s [km]"
+                    fig[k].yaxis[0].axis_label = labels[j]
                     k += 1
 
             for track in [
@@ -544,7 +545,7 @@ class Realizations:
                         plot_height=250,
                     )
                 )
-                colors = iter([color_func.rgb2hex(each) for each in palette])
+                colors = iter([mpl_color.rgb2hex(each) for each in palette])
                 for j, y in enumerate(["hdop", "vdop", "pdop", "nSAT"]):
                     fig[k].line(
                         track.s,
@@ -552,7 +553,7 @@ class Realizations:
                         line_color=next(colors),
                         legend_label=y,
                     )
-                fig[k].xaxis[0].axis_label = track.s.name
+                fig[k].xaxis[0].axis_label = "s [km]"
                 fig[k].yaxis[0].axis_label = "xDOP, nSAT"
                 fig[k].legend.location = "top_left"
                 k += 1
@@ -567,6 +568,7 @@ class Realizations:
         k = 0
         fig_sum = []
         cols = ["alt", "v"]
+        yaxis_label = ["Altitude [m]", "v [km/h]"]
         colorRealizations = ['seagreen', 'royalblue', 'lightsalmon']
         colorAverage = ['green', 'blue', 'red']
 
@@ -578,7 +580,24 @@ class Realizations:
                     self.avRealization[col + "_filt"],
                     line_color=colorAverage[j],
                     line_width=2,
-                    legend_label=col,
+                    legend_label="Average altitude [m]",
+                )
+                fig_sum[k].line(
+                    self.avRealization.s,
+                    self.avRealization.alt_lin,
+                    line_color='orange',
+                    legend_label='Linear approximation',
+                )
+                fig_sum[k].extra_y_ranges = {"secondary": Range1d(
+                    start=min(self.avRealization.alt_grad)-1, end=max(self.avRealization.alt_grad)+1)}
+                fig_sum[k].add_layout(LinearAxis(
+                    y_range_name="secondary", axis_label="Track gradient [1/1000]"), 'left')
+                fig_sum[k].line(
+                    self.avRealization.s,
+                    self.avRealization.alt_grad,
+                    line_color='orange',
+                    legend_label='Track gradient [1/1000]',
+                    y_range_name="secondary"
                 )
             if col == "v":
                 fig_sum[k].line(
@@ -586,11 +605,11 @@ class Realizations:
                     self.avRealization[col + "_max"],
                     line_color=colorAverage[j],
                     line_width=2,
-                    legend_label=col,
+                    legend_label="v [km/h]",
                 )
             for each in self.condRealizations:
                 fig_sum[k].line(
-                    each.s, each[col], line_alpha=0.2, line_color=colorRealizations[j], legend_label=col,
+                    each.s, each[col], line_alpha=0.2, line_color=colorRealizations[j], legend_label=col + " realizations",
                 )
 
             fig_sum[k].varea(
@@ -601,27 +620,8 @@ class Realizations:
                 self.avRealization[col + "_std"],
                 fill_color=colorRealizations[j],
                 fill_alpha=0.1,
-                legend_label=col,
+                legend_label=col + " realizations",
             )
-
-            if col == 'alt':
-                fig_sum[k].line(
-                    self.avRealization.s,
-                    self.avRealization.alt_lin,
-                    line_color='orange',
-                    legend_label='alt_lin',
-                )
-                fig_sum[k].extra_y_ranges = {"secondary": Range1d(
-                    start=min(self.avRealization.alt_grad)-1, end=max(self.avRealization.alt_grad)+1)}
-                fig_sum[k].add_layout(LinearAxis(
-                    y_range_name="secondary"), 'left')
-                fig_sum[k].line(
-                    self.avRealization.s,
-                    self.avRealization.alt_grad,
-                    line_color='orange',
-                    legend_label='alt_grad',
-                    y_range_name="secondary"
-                )
 
             source = ColumnDataSource(data=self.stations)
             labels = LabelSet(
@@ -636,8 +636,8 @@ class Realizations:
             )
             fig_sum[k].add_layout(labels)
             fig_sum[k].add_tools(ZoomInTool(), ZoomOutTool())
-            fig_sum[k].xaxis[0].axis_label = self.sumRealization.s.name
-            fig_sum[k].yaxis[0].axis_label = self.sumRealization[col].name
+            fig_sum[k].xaxis[0].axis_label = "s [km]"
+            fig_sum[k].yaxis[0].axis_label = yaxis_label[j]
             k += 1
         bkh.output_file(os.path.join(
             graphPath, "track_data.html"))
@@ -648,32 +648,33 @@ class Realizations:
         """Plot vehicle data."""
         k = 0
         fig_sum = []
-        cols = ['F_traction', 'control']
         color = ['crimson', 'royalblue', 'seagreen']
 
         for each in self.condRealizations:
             fig_sum.append(bkh.figure(
-                plot_height=250,
+                plot_height=200,
                 title=each.loc[0, "trackName"],
                 title_location="left",))
-            fig_sum[k].extra_y_ranges = {"secondary": Range1d(
-                start=min(each.control)-1, end=8 * max(each.control)+1)}
-            fig_sum[k].add_layout(LinearAxis(
-                y_range_name="secondary"), 'left')
-
-            for j, col in enumerate(cols):
-                if col == 'F_traction':
-                    fig_sum[k].line(
-                        each.s, each[col], line_color=color[j], legend_label=col
-                    )
-                if col == 'control':
-                    fig_sum[k].line(
-                        each.s, each[col], line_color=color[j], legend_label=col, y_range_name="secondary"
-                    )
-
+            data = each[['s', 'track_resistance',
+                        'veh_resistance', 'F_traction']].copy()
+            data[['track_resistance', 'veh_resistance', 'F_traction']] /= 1000
+            fig_sum[k].line(data.s, data.F_traction,
+                            line_color=color[1], legend_label='Traction and braking forces [kN]')
             fig_sum[k].varea_stack(
-                ['veh_resistance', 'track_resistance'], x='s', color=['mediumslateblue', 'orange'], fill_alpha=0.2, legend_label=['veh_resistance', 'track_resistance'], source=each)
+                ['veh_resistance', 'track_resistance'], x='s', color=['mediumslateblue', 'orange'], fill_alpha=0.2, legend_label=['Vehicle resistance [kN]', 'Track resistance [kN]'], source=data)
+            fig_sum[k].yaxis[0].axis_label = "Traction / Braking forces, Track / Vehicle resistances [kN]"
+            k += 1
 
+            fig_sum.append(bkh.figure(
+                plot_height=80,
+                title=each.loc[0, "trackName"],
+                title_location="left",))
+            fig_sum[k].line(each.s, each.control,
+                            line_color=color[0], legend_label='Control function')
+            fig_sum[k].yaxis[0].axis_label = "Control positions"
+            k += 1
+
+        for each in fig_sum:
             source = ColumnDataSource(data=self.stations)
             labels = LabelSet(
                 x="s",
@@ -685,14 +686,74 @@ class Realizations:
                 source=source,
                 render_mode="canvas",
             )
-            fig_sum[k].add_layout(labels)
-            fig_sum[k].add_tools(ZoomInTool(), ZoomOutTool())
-            fig_sum[k].xaxis[0].axis_label = "s"
-            fig_sum[k].yaxis[0].axis_label = "Resistances and traction force"
-            k += 1
+            each.add_layout(labels)
+            each.add_tools(ZoomInTool(), ZoomOutTool())
+            each.xaxis[0].axis_label = "s [km]"
+
         bkh.output_file(os.path.join(
             graphPath, "veh_data.html"))
         bkh.save(lyt.gridplot(fig_sum, ncols=1, sizing_mode="scale_width"))
+
+        data = pd.concat(self.condRealizations, ignore_index=True)
+        data.F_traction /= 1000
+
+        fig = pyplot.figure()
+        D = 4
+        gs = fig.add_gridspec(D, 2*D)
+        ax_3d = fig.add_subplot(gs[1:, :D], projection='3d')
+        ax = fig.add_subplot(gs[1:, D:-1])
+        ax_F = fig.add_subplot(gs[1:, -1], sharey=ax)
+        ax_v = fig.add_subplot(gs[0, D:-1], sharex=ax)
+        ax_text = fig.add_subplot(gs[0, :D])
+        ax_Fc = ax_F.twiny()
+        ax_vc = ax_v.twinx()
+
+        N_bin = 120
+        H, xedges, yedges = np.histogram2d(
+            data.v, data.F_traction, bins=N_bin, density=True)
+        xpos, ypos = np.meshgrid(xedges[:-1], yedges[:-1], indexing='ij')
+        xpos = xpos.ravel()
+        ypos = ypos.ravel()
+        zpos = np.zeros(N_bin ** 2)
+
+        dx = np.ones(N_bin ** 2) * (np.ptp(xedges)) / N_bin
+        dy = np.ones(N_bin ** 2) * (np.ptp(yedges)) / N_bin
+        dz = H.ravel()
+
+        dc = pyplot.cm.Blues((dz / dz.max()) ** (1/5))
+
+        ax_3d.bar3d(xpos, ypos, zpos, dx, dy, dz, color=dc)
+        ax_3d.set_title('Probability density function')
+        ax_3d.set_xlabel('v [km/h]')
+        ax_3d.set_ylabel('Traction / Brake force [kN]')
+
+        ax.scatter(data.v, data.F_traction, marker=".", c=color[1],
+                   linewidth=0.5, edgecolors="none", alpha=0.5)
+        ax.set_xlabel('v [km/h]', loc='right')
+        ax.set_ylabel('Traction / Brake force [kN]')
+        ax_F.hist(data.F_traction, bins=N_bin,
+                  orientation='horizontal', color=color[1], density=True)
+        ax_Fc.hist(data.F_traction, bins=N_bin, orientation='horizontal',
+                   color=color[0], density=True, cumulative=True, histtype='step')
+        ax_F.yaxis.set_tick_params(left=False, labelleft=False)
+        ax_Fc.tick_params('x', colors=color[0])
+        ax_v.hist(data.v, bins=N_bin, color=color[1], density=True)
+        ax_v.xaxis.set_tick_params(bottom=False, labelbottom=False)
+        ax_vc.hist(data.v, bins=N_bin,
+                   color=color[0], density=True, cumulative=True, histtype='step')
+        ax_vc.tick_params('y', colors=color[0])
+
+        routes = self.query.fileName.str.cat(sep='\n')
+        ax_text.text(0.02, 0.7, routes, transform=ax_text.transAxes)
+        ax_text.grid(False)
+        ax_text.xaxis.set_tick_params(bottom=False, labelbottom=False)
+        ax_text.yaxis.set_tick_params(left=False, labelleft=False)
+
+        pyplot.savefig(
+            os.path.join(
+                graphPath, "F_v_distribution.png")
+        )
+
         print("Vehicle data plotted.")
 
     def controlMatrixGraph(self, graphPath):
@@ -718,7 +779,10 @@ class Realizations:
                     ax[idx].text(i, j, f"{label:1.3f}",
                                  ha='center', va='center')
             ax[idx].set_title(f"Control matrix for {each[0]}")
-
+        pyplot.savefig(
+            os.path.join(
+                graphPath, "control_matrix.png")
+        )
         print("Control matrix graphs generated.")
 
         control = ['traction', 'brake']
@@ -746,7 +810,10 @@ class Realizations:
                     print(
                         f"\tExponential distribution not fitted - {ctrl} - {idx}.")
                 ax[idx].title.set_text(f"{ctrl} - {idx}")
-
+        pyplot.savefig(
+            os.path.join(
+                graphPath, "control_duration.png")
+        )
         print("Control duration histograms plotted.")
 
     def copyFiles(self, graphPath, destPath, tag):
@@ -761,7 +828,4 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
-"""EOF"""
-"""EOF"""
-"""EOF"""
 """EOF"""

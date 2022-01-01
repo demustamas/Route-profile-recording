@@ -164,7 +164,6 @@ class Realizations:
                     steps[i], steps[i+1])] = i
 
             control_func = control_func.astype(int)
-            each['control'] = control_func
 
             row = np.where(control_func[:-1] != control_func[1:])[0]
             column = row + 1
@@ -194,6 +193,8 @@ class Realizations:
                         self.controlMatrixNorm[-1][ctrl][i] = self.controlMatrix[-1][ctrl][i] / \
                             self.controlMatrix[-1][ctrl][i].sum()
 
+            control_func -= N-1
+            each['control'] = control_func
         M_sum[0:N, 0:N] = np.flip(M_sum[0:N, 0:N])
 
         for ctrlIdx, ctrl in enumerate(control):
