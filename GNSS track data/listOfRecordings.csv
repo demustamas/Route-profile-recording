@@ -59,3 +59,30 @@ moGPXTracker_20211212193404.gpx,route,2021/12/12 19:34:04,Füzesabony,Keleti,FLI
 PMTK1018.csv,route,2021/12/23 12:00:08,Keleti,Füzesabony,FLIRT+FLIRT,IR,MTK 3339
 UBX10008.csv,route,2021/12/23 12:00:08,Keleti,Füzesabony,FLIRT+FLIRT,IR,U-blox M8N
 moGPXTracker_20211223120008.gpx,route,2021/12/23 12:00:08,Keleti,Füzesabony,FLIRT+FLIRT,IR,IPhone 11 Pro
+PMTK1020.CSV,route,2021/12/29 17:28:09,Füzesabony,Keleti,FLIRT+FLIRT,IR,MTK 3339
+UBX10009.csv,route,2021/12/29 17:28:09,Füzesabony,Keleti,FLIRT+FLIRT,IR,U-blox M8N
+UBX10010.csv,route,2022/01/07 20:00:06,Keleti,Füzesabony,FLIRT+FLIRT,IR,U-blox M8N
+UBX10011.csv,route,2022/01/08 19:29:43,Füzesabony,Keleti,FLIRT,IR,U-blox M8N
+moGPXTracker_20211229172809.gpx,route,2021/12/29 17:28:09,Füzesabony,Keleti,FLIRT+FLIRT,IR,IPhone 11 Pro
+moGPXTracker_20220107200006.gpx,route,2022/01/07 20:00:06,Keleti,Füzesabony,FLIRT+FLIRT,IR,IPhone 11 Pro
+moGPXTracker_20220108192943.gpx,route,2022/01/08 19:29:43,Füzesabony,Keleti,FLIRT,IR,IPhone 11 Pro
+PMTK1025.csv,route,2022/01/22 18:00:07,Keleti,Füzesabony,FLIRT+FLIRT,IR,MTK 3339
+PMTK1028.csv,route,2022/01/23 16:26:30,Füzesabony,Keleti,FLIRT+FLIRT,IR,MTK 3339
+PMTK1031.csv,route,2022/01/30 13:00:03,Keleti,Füzesabony,FLIRT+FLIRT,IR,MTK 3339
+PMTK1034.csv,static,2022/01/31 15:40:42,Tiszanana,14,openair,openair,MTK 3339
+PMTK1036.csv,route,2022/02/02 07:27:22,Füzesabony,Keleti,FLIRT+FLIRT,IR,MTK 3339
+PMTK1039.csv,route,2022/02/02 13:59:33,Keleti,Füzesabony,FLIRT+FLIRT,IR,MTK 3339
+PMTK1041.csv,route,2022/02/08 10:27:06,Füzesabony,Keleti,FLIRT+FLIRT,IR,MTK 3339
+UBX10012.csv,route,2022/01/22 18:00:07,Keleti,Füzesabony,FLIRT+FLIRT,IR,U-blox M8N
+UBX10013.csv,route,2022/01/23 16:26:30,Füzesabony,Keleti,FLIRT+FLIRT,IR,U-blox M8N
+UBX10014.csv,route,2022/01/30 13:00:03,Keleti,Füzesabony,FLIRT+FLIRT,IR,U-blox M8N
+UBX10015.csv,static,2022/01/31 15:40:42,Tiszanana,14,openair,openair,U-blox M8N
+UBX10016.csv,route,2022/02/02 07:27:22,Füzesabony,Keleti,FLIRT+FLIRT,IR,U-blox M8N
+UBX10017.csv,route,2022/02/02 13:59:33,Keleti,Füzesabony,FLIRT+FLIRT,IR,U-blox M8N
+UBX10018.csv,route,2022/02/08 10:27:06,Füzesabony,Keleti,FLIRT+FLIRT,IR,U-blox M8N
+moGPXTracker_20220122180007.gpx,route,2022/01/22 18:00:07,Keleti,Füzesabony,FLIRT+FLIRT,IR,IPhone 11 Pro
+moGPXTracker_20220123162630.gpx,route,2022/01/23 16:26:30,Füzesabony,Keleti,FLIRT+FLIRT,IR,IPhone 11 Pro
+moGPXTracker_20220130130003.gpx,route,2022/01/30 13:00:03,Keleti,Füzesabony,FLIRT+FLIRT,IR,IPhone 11 Pro
+moGPXTracker_20220202072722.gpx,route,2022/02/02 07:27:22,Füzesabony,Keleti,FLIRT+FLIRT,IR,IPhone 11 Pro
+moGPXTracker_20220202135933.gpx,route,2022/02/02 13:59:33,Keleti,Füzesabony,FLIRT+FLIRT,IR,IPhone 11 Pro
+moGPXTracker_20220208102706.gpx,route,2022/02/08 10:27:06,Füzesabony,Keleti,FLIRT+FLIRT,IR,IPhone 11 Pro

@@ -64,16 +64,16 @@ def main():
 
     # Model.generateStations(station_path)
     Model.queryRealizations(working_path)
-    # Model.staticGraph(graph_path)
+    Model.staticGraph(graph_path)
     # Model.altitudeGraph(graph_path)
     # Model.speedGraph(graph_path)
     # Model.accuracyGraph(graph_path)
     # Model.mapGraph(graph_path)
-    Model.characteristicsGraph(graph_path)
-    Model.trackGraph(graph_path)
-    Model.vehGraph(graph_path)
-    Model.controlMatrixGraph(graph_path)
-    Model.copyFiles(graph_path, destination_path, name_tag)
+    # Model.characteristicsGraph(graph_path)
+    # Model.trackGraph(graph_path)
+    # Model.vehGraph(graph_path)
+    # Model.controlMatrixGraph(graph_path)
+    # Model.copyFiles(graph_path, destination_path, name_tag)
 
 
 """Simulation model"""
@@ -743,7 +743,7 @@ class Realizations:
                    color=color[0], density=True, cumulative=True, histtype='step')
         ax_vc.tick_params('y', colors=color[0])
 
-        routes = self.query.fileName.str.cat(sep='\n')
+        routes = 'Recordings:\n  ' + self.query.fileName.str.cat(sep='\n  ')
         ax_text.text(0.02, 0.7, routes, transform=ax_text.transAxes)
         ax_text.grid(False)
         ax_text.xaxis.set_tick_params(bottom=False, labelbottom=False)

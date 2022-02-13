@@ -31,6 +31,12 @@ working_dir = "Results/Test/"
 
 sql_query = """SELECT *
     FROM listOfRecordings
+    WHERE recType = 'static'
+    AND dateTime = '2022/01/31 15:40:42'
+    """
+
+"""SELECT *
+    FROM listOfRecordings
     WHERE recType = 'route'
     AND (fromStation = 'Füzesabony' OR fromStation = 'Eger')
     AND toStation = 'Keleti'
@@ -69,7 +75,7 @@ def main():
 
     Model.queryRealizations(database_path, sql_query)
     Model.conditionRealization(graph=False)
-    Model.aggregateRealization(fit_curves=True, graph=False)
+    Model.aggregateRealization(fit_curves=False, graph=False)
     Model.saveToDatabase(working_path)
 
 

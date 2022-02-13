@@ -68,7 +68,6 @@ class Realizations:
             print(f"{listOfRecs} initDatabase: File not found!")
             sys.exit()
 
-        print("\n")
         for each in fileList:
             entryCounter = df_recs.fileName.str.contains(each).sum()
             if entryCounter == 0:
