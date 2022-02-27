@@ -31,6 +31,16 @@ working_dir = "Results/Test/"
 
 sql_query = """SELECT *
     FROM listOfRecordings
+    WHERE recType = 'route'
+    AND fromStation = 'Füzesabony'
+    AND toStation = 'Keleti'
+    AND trainType = 'IR'
+    AND (trainConfig = 'FLIRT' OR trainConfig = 'FLIRT+FLIRT')
+    AND receiverType = 'U-blox M8N'
+    """
+
+"""SELECT *
+    FROM listOfRecordings
     WHERE recType = 'static'
     AND dateTime = '2022/01/31 15:40:42'
     """
@@ -38,7 +48,7 @@ sql_query = """SELECT *
 """SELECT *
     FROM listOfRecordings
     WHERE recType = 'route'
-    AND (fromStation = 'Füzesabony' OR fromStation = 'Eger')
+    AND fromStation = 'Füzesabony'
     AND toStation = 'Keleti'
     AND trainType = 'IR'
     AND (trainConfig = 'FLIRT' OR trainConfig = 'FLIRT+FLIRT')
@@ -75,7 +85,7 @@ def main():
 
     Model.queryRealizations(database_path, sql_query)
     Model.conditionRealization(graph=False)
-    Model.aggregateRealization(fit_curves=False, graph=False)
+    Model.aggregateRealization(fit_curves=True, graph=False)
     Model.saveToDatabase(working_path)
 
 

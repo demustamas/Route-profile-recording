@@ -64,15 +64,15 @@ def main():
 
     # Model.generateStations(station_path)
     Model.queryRealizations(working_path)
-    Model.staticGraph(graph_path)
+    # Model.staticGraph(graph_path)
     # Model.altitudeGraph(graph_path)
     # Model.speedGraph(graph_path)
     # Model.accuracyGraph(graph_path)
-    # Model.mapGraph(graph_path)
-    # Model.characteristicsGraph(graph_path)
-    # Model.trackGraph(graph_path)
-    # Model.vehGraph(graph_path)
-    # Model.controlMatrixGraph(graph_path)
+    Model.mapGraph(graph_path)
+    Model.characteristicsGraph(graph_path)
+    Model.trackGraph(graph_path)
+    Model.vehGraph(graph_path)
+    Model.controlMatrixGraph(graph_path)
     # Model.copyFiles(graph_path, destination_path, name_tag)
 
 
