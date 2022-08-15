@@ -10,6 +10,7 @@ import sqlite3 as sql
 import pandas as pd
 import numpy as np
 
+from scipy.interpolate import interp1d
 from matplotlib import pyplot
 
 import os
@@ -24,7 +25,7 @@ destination_dir = "ToCopy/"
 name_tag = ""
 palette = pyplot.cm.tab10
 palette = palette(range(palette.N))
-pyplot.style.use('mplstyle.work')
+pyplot.style.use('mplstyle.article')
 
 """PATH"""
 
@@ -108,44 +109,71 @@ class Realizations:
     def calcTraction(self, graph=False):
         """Calculate traction forces."""
 
-        gamma = 0.2
+        gamma = 0.1
         M = 124
 
         for each in self.condRealizations:
             each['F_traction'] = (1 + gamma) * 1000 * M * \
                 each.a + each.veh_resistance + each.track_resistance
 
+        # if graph:
+        #     for idx, each in enumerate(self.condRealizations):
+        #         fig, ax = pyplot.subplots(3, 1)
+        #         ax[0].plot(each.s, each.F_traction,
+        #                    label=(str(self.query.dateTime.iloc[idx]) + " / " + str(self.query.receiverType.iloc[idx])))
+        #         ax[1].plot(each.s, each.a*100)
+        #         ax[1].plot(each.s, each.v)
+        #         ax[2].plot(each.s, self.avRealization.alt.iloc[np.searchsorted(
+        #             self.avRealization.s, each.s)])
+        #         ax[2].plot(
+        #             each.s, self.avRealization.alt_grad.iloc[np.searchsorted(self.avRealization.s, each.s)])
+        #         ax[0].legend(ncol=3)
+
         if graph:
-            for idx, each in enumerate(self.condRealizations):
-                fig, ax = pyplot.subplots(3, 1)
-                ax[0].plot(each.s, each.F_traction,
-                           label=(str(self.query.dateTime.iloc[idx]) + " / " + str(self.query.receiverType.iloc[idx])))
-                ax[1].plot(each.s, each.a*100)
-                ax[1].plot(each.s, each.v)
-                ax[2].plot(each.s, self.avRealization.alt.iloc[np.searchsorted(
-                    self.avRealization.s, each.s)])
-                ax[2].plot(
-                    each.s, self.avRealization.alt_grad.iloc[np.searchsorted(self.avRealization.s, each.s)])
-                ax[0].legend(ncol=3)
+            fix, ax = pyplot.subplots(1, 1, figsize=(4, 1.5))
+            ax.plot(self.condRealizations[0].s,
+                    self.condRealizations[0].F_traction / 1000)
+            ax.set_xlabel('Distance travelled [km]')
+            ax.set_ylabel('Traction / Braking force [kN]')
 
         print("\nTraction forces calculated.")
 
     def calcControlMatrix(self, graph=False):
         """Calculate control matrix."""
-        limit = 0
         N = 9
         control = ['brake', 'traction']
 
-        for each in self.condRealizations:
-            limit = np.maximum(limit, each.F_traction.abs().max())
-        steps = np.linspace(-limit, limit, 2*N, endpoint=True)
+        v_input = np.array([-10, 48, 50, 60, 70, 80, 90, 100,
+                            110, 120, 130, 140, 150, 160])
+        F_input = np.array([200, 200, 186, 155, 131, 116,
+                            103, 94, 86, 79, 73, 68, 64, 60], dtype='float')
+        M = 100
+        v = np.linspace(min(v_input), max(v_input), M)
+        F = np.zeros(M)
+
+        f = interp1d(v_input, F_input, kind='cubic')
+        F = f(v)
+
+        # for i in range(len(v_input)-1):
+        #     xp = [v_input[i], v_input[i+1]]
+        #     fp = [F_input[i], F_input[i+1]]
+        #     F[np.where(np.logical_and(v >= v_input[i], v < v_input[i+1]))
+        #       ] = np.interp(v[np.where(np.logical_and(v >= v_input[i], v < v_input[i+1]))], xp, fp)
+
+        F *= 1000
+
+        steps = np.zeros((len(v), 2*N))
+        for i in range(len(v)):
+            steps[i] = np.linspace(-F[i], F[i], 2*N, endpoint=True)
+            steps[i, 1] *= 1.1
+            steps[i, -1] *= 1.1
 
         for ctrl in control:
-            self.controlMatrixSum[ctrl] = np.zeros(N*N).reshape(N, N)
-            self.controlMatrixSumNorm[ctrl] = np.zeros(N*N).reshape(N, N)
+            self.controlMatrixSum[ctrl] = np.zeros((N, N))
+            self.controlMatrixSumNorm[ctrl] = np.zeros((N, N))
             self.controlDurationSum[ctrl] = [np.array([]) for x in range(N)]
 
-        M_sum = np.zeros(4*N*N).reshape(2*N, 2*N)
+        M_sum = np.zeros((2*N, 2*N))
         t_sum = [np.array([]) for x in range(2*N-1)]
         for each in self.condRealizations:
             self.controlMatrix.append({})
@@ -153,19 +181,21 @@ class Realizations:
             self.controlDuration.append({})
 
             for ctrl in control:
-                self.controlMatrix[-1][ctrl] = np.zeros(N*N).reshape(N, N)
-                self.controlMatrixNorm[-1][ctrl] = np.zeros(N*N).reshape(N, N)
+                self.controlMatrix[-1][ctrl] = np.zeros((N, N))
+                self.controlMatrixNorm[-1][ctrl] = np.zeros((N, N))
                 self.controlDuration[-1][ctrl] = [np.array([])
                                                   for x in range(N)]
 
             control_func = np.zeros(len(each))
-            for i in range(2*N-1):
-                control_func[each.F_traction.between(
-                    steps[i], steps[i+1])] = i
+# a gond valahol ebben a for-ban van -> negatív sebességet nem tud osztályozni + még valami gond van ezen felül
+            for i in range(len(v)-1):
+                for j in range(2*N-1):
+                    control_func[each.v.between(
+                        v[i], v[i+1]) & each.F_traction.between(steps[i][j], steps[i][j+1])] = j
 
             control_func = control_func.astype(int)
 
-            row = np.where(control_func[:-1] != control_func[1:])[0]
+            row = np.where(control_func[: -1] != control_func[1:])[0]
             column = row + 1
             coord = list(
                 zip(control_func[row], control_func[column]))
@@ -175,7 +205,7 @@ class Realizations:
             for key, value in counter.items():
                 M[key] = value
                 M_sum[key] += value
-            M[0:N, 0:N] = np.flip(M[0:N, 0:N])
+            M[0: N, 0: N] = np.flip(M[0: N, 0: N])
 
             time_col = each.t.to_numpy()
             time = time_col[column[1:]-1] - time_col[column[:-1]]
@@ -186,8 +216,8 @@ class Realizations:
 
             for ctrlIdx, ctrl in enumerate(control):
                 self.controlMatrix[-1][ctrl] = M[ctrlIdx *
-                                                 (N-1):ctrlIdx*(N-1)+N, ctrlIdx*(N-1):ctrlIdx*(N-1)+N]
-                self.controlDuration[-1][ctrl] = t[N-1::2*ctrlIdx-1]
+                                                 (N-1): ctrlIdx*(N-1)+N, ctrlIdx*(N-1): ctrlIdx*(N-1)+N]
+                self.controlDuration[-1][ctrl] = t[N-1:: 2*ctrlIdx-1]
                 for i in range(N):
                     if self.controlMatrix[-1][ctrl][i].sum() != 0:
                         self.controlMatrixNorm[-1][ctrl][i] = self.controlMatrix[-1][ctrl][i] / \
@@ -195,12 +225,12 @@ class Realizations:
 
             control_func -= N-1
             each['control'] = control_func
-        M_sum[0:N, 0:N] = np.flip(M_sum[0:N, 0:N])
+        M_sum[0: N, 0: N] = np.flip(M_sum[0: N, 0: N])
 
         for ctrlIdx, ctrl in enumerate(control):
             self.controlMatrixSum[ctrl] = M_sum[ctrlIdx *
-                                                (N-1):ctrlIdx*(N-1)+N, ctrlIdx*(N-1):ctrlIdx*(N-1)+N]
-            self.controlDurationSum[ctrl] = t_sum[N-1::2*ctrlIdx-1]
+                                                (N-1): ctrlIdx*(N-1)+N, ctrlIdx*(N-1): ctrlIdx*(N-1)+N]
+            self.controlDurationSum[ctrl] = t_sum[N-1:: 2*ctrlIdx-1]
             for i in range(N):
                 if self.controlMatrixSum[ctrl][i].sum() != 0:
                     self.controlMatrixSumNorm[ctrl][i] = self.controlMatrixSum[ctrl][i] / \

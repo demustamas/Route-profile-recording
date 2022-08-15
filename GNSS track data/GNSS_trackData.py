@@ -28,7 +28,7 @@ destination_dir = "ToCopy/"
 name_tag = ""
 palette = pyplot.cm.tab10
 palette = palette(range(palette.N))
-pyplot.style.use('mplstyle.work')
+pyplot.style.use('mplstyle.article')
 
 """PATH"""
 
@@ -44,9 +44,9 @@ def main():
     Model.queryRealizations(working_path)
     Model.averageRealization()
     Model.filterRealization()
-    Model.calcAltitude()
-    Model.calcvMax()
-    Model.calcTrackResistance()
+    Model.calcAltitude(graph=False)
+    # Model.calcvMax()
+    Model.calcTrackResistance(graph=True)
     Model.saveToDatabase(working_path)
 
 
@@ -137,7 +137,7 @@ class Realizations:
 
         print("Average values filtered.\n")
 
-    def calcAltitude(self):
+    def calcAltitude(self, graph=False):
         """Approximate altitude with piece-wise linear fit and calculate gradient."""
 
         spl = UnivariateSpline(self.avRealization.s,
@@ -192,7 +192,7 @@ class Realizations:
 
         print("\nCalculation of vmax done.")
 
-    def calcTrackResistance(self):
+    def calcTrackResistance(self, graph=False):
         """Calculate track resistance."""
 
         M = 124
@@ -201,6 +201,26 @@ class Realizations:
         for each in self.condRealizations:
             each['track_resistance'] = self.avRealization.track_resistance.iloc[np.searchsorted(
                 self.avRealization.s, each.s)].reset_index(drop=True)
+
+        if graph:
+            fig, ax = pyplot.subplots(2, 1)
+            for each in self.condRealizations:
+                ax[0].plot(each.s, each.alt, c='#2ca02c', linewidth=0.2)
+            # ax[0].plot(self.avRealization.s,
+            #            self.avRealization.alt, c='g', label='Average altitude')
+            # ax[1].plot(self.avRealization.s,
+            #            self.avRealization.alt_filt, c='purple', label='Filtered altitude')
+            ax[0].plot(self.avRealization.s,
+                       self.avRealization.alt_lin, c='#d62728', label='Linear approximation')
+            ax[1].plot(self.avRealization.s, self.avRealization.alt_grad,
+                       c='#1f77b4', label='Track gradient')
+            ax[1].set_xlabel('Distance travelled [km]')
+            ax[0].set_ylabel('Altitude [m]')
+            ax[1].set_ylabel('Track gradient [1/1000]')
+            # ax[2].set_ylabel('Track gradient')
+            ax[0].legend()
+            ax[1].legend()
+            # ax[2].legend()
 
         print("\nTrack resistance calculated.")
 
@@ -224,4 +244,6 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
+"""EOF"""
+"""EOF"""
 """EOF"""

@@ -32,8 +32,8 @@ working_dir = "Results/Test/"
 sql_query = """SELECT *
     FROM listOfRecordings
     WHERE recType = 'route'
-    AND fromStation = 'Füzesabony'
-    AND toStation = 'Keleti'
+    AND fromStation = 'Keleti'
+    AND toStation = 'Füzesabony'
     AND trainType = 'IR'
     AND (trainConfig = 'FLIRT' OR trainConfig = 'FLIRT+FLIRT')
     AND receiverType = 'U-blox M8N'
@@ -66,7 +66,7 @@ sql_query = """SELECT *
     AND receiverType = ''
     """
 
-pyplot.style.use('mplstyle.work')
+pyplot.style.use('mplstyle.article')
 np.set_printoptions(precision=3)
 
 """PATH"""
@@ -84,7 +84,7 @@ def main():
     """Calling simulation model."""
 
     Model.queryRealizations(database_path, sql_query)
-    Model.conditionRealization(graph=False)
+    Model.conditionRealization(graph=True)
     Model.aggregateRealization(fit_curves=True, graph=False)
     Model.saveToDatabase(working_path)
 
@@ -175,20 +175,34 @@ class Realizations:
         """Print out conditioned data."""
         for idx, each in enumerate(self.condRealizations):
             N_deleted = len(self.rawRealizations[idx]) - len(each)
-            print(f"Removed {N_deleted:5} points from {each.iloc[0,1]}")
+            print(f"Removed {N_deleted:5} points from {each.iloc[0,0]}")
+
+        # if graph:
+        #     cols = ['alt', 'v']
+        #     for idx, each in enumerate(self.rawRealizations):
+        #         fig, ax = pyplot.subplots(2, 2)
+        #         fig.suptitle(each['trackName'].iloc[0])
+        #         for col_idx, col in enumerate(cols):
+        #             ax[col_idx, 0].plot(each.s, each[col],
+        #                                 color='green', label=col)
+        #             ax[col_idx, 1].plot(self.condRealizations[idx].s,
+        #                                 self.condRealizations[idx][col], color='blue', label=col)
+        #             ax[col_idx, 0].legend()
+        #             ax[col_idx, 1].legend()
 
         if graph:
-            cols = ['alt', 'v']
-            for idx, each in enumerate(self.rawRealizations):
-                fig, ax = pyplot.subplots(2, 2)
-                fig.suptitle(each['trackName'].iloc[0])
-                for col_idx, col in enumerate(cols):
-                    ax[col_idx, 0].plot(each.s, each[col],
-                                        color='green', label=col)
-                    ax[col_idx, 1].plot(self.condRealizations[idx].s,
-                                        self.condRealizations[idx][col], color='blue', label=col)
-                    ax[col_idx, 0].legend()
-                    ax[col_idx, 1].legend()
+            fig, ax = pyplot.subplots(2, 2)
+            ax[0, 0].plot(self.rawRealizations[0].s,
+                          self.rawRealizations[0].alt)
+            ax[0, 1].plot(self.condRealizations[0].s,
+                          self.condRealizations[0].alt)
+            ax[1, 0].plot(self.rawRealizations[0].s, self.rawRealizations[0].v)
+            ax[1, 1].plot(self.condRealizations[0].s,
+                          self.condRealizations[0].v)
+            ax[0, 0].set_ylabel('Altitude [m]')
+            ax[1, 0].set_xlabel('Distance travelled [km]')
+            ax[1, 0].set_ylabel('Vehicle speed [km/h]')
+            ax[1, 1].set_xlabel('Distance travelled [km]')
 
         print("\nData conditioning performed.\n")
 
@@ -207,7 +221,7 @@ class Realizations:
         """Merge additional GNSS data sets."""
         df = self.sumRealization.copy()
 
-        cols = ["alt", "v"]
+        cols = ["lon", "lat", "alt"]
 
         for idx in range(1, len(self.condRealizations)):
             """Set distance offset based on cross-correlation."""
@@ -280,7 +294,10 @@ class Realizations:
                 for idx, each in enumerate(self.condRealizations):
                     ax.plot(each.s, each[col],
                             label=(str(self.query.dateTime.iloc[idx]) + " / " + str(self.query.receiverType.iloc[idx])))
-                    ax.legend(ncol=3)
+                    ax.set_xlabel('Distance travelled [km]')
+                    ax.set_ylabel('Altitude [m]')
+                    ax.plot(each.s, each[col])
+                    # ax.legend(ncol=3)
 
         print("\nData aggregation completed.\n")
 
