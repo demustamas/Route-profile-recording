@@ -14,10 +14,13 @@ from scipy.signal import butter, filtfilt
 from scipy.interpolate import interp1d, UnivariateSpline
 
 from matplotlib import pyplot
+from matplotlib.gridspec import GridSpec
+
+from colorama import Fore, Style
 
 import os
 
-# ??? What to do with the NaNs coming from the np.gradient at altitude?
+# ? What to do with the NaNs coming from the np.gradient at altitude?
 
 """Simulation input parameters"""
 
@@ -28,7 +31,7 @@ destination_dir = "ToCopy/"
 name_tag = ""
 palette = pyplot.cm.tab10
 palette = palette(range(palette.N))
-pyplot.style.use('mplstyle.article')
+pyplot.style.use('mplstyle.work')
 
 """PATH"""
 
@@ -45,13 +48,12 @@ def main():
     Model.averageRealization()
     Model.filterRealization()
     Model.calcAltitude(graph=False)
-    # Model.calcvMax()
-    Model.calcTrackResistance(graph=True)
+    Model.calcvMax()
+    Model.calcTrackResistance(graph=False)
     Model.saveToDatabase(working_path)
 
 
 """Simulation model"""
-
 
 class Realizations:
     """Class definition for storing GNSS data and calculating track parameters."""
@@ -90,7 +92,7 @@ class Realizations:
         con = sql.connect(wPath + "avRealization.db")
         self.avRealization = pd.read_sql("SELECT * FROM \"av\"", con)
         con.close()
-        print("\nRealizations loaded.\n")
+        print(f"{Fore.GREEN}\nRealizations loaded.\n{Style.RESET_ALL}")
 
     def averageRealization(self):
         """Clean sum GNSS data."""
@@ -190,6 +192,14 @@ class Realizations:
         self.avRealization['v_max'] = v
         self.avRealization.v_max.fillna(method='ffill', inplace=True)
 
+        fig, ax = pyplot.subplots(1, 1)
+        for each in self.condRealizations:
+            ax.plot(each.s, each.v, c='#1f77b4', linewidth=0.2)
+        ax.plot(self.avRealization.s, self.avRealization.v_max,
+                c='#d62728', linewidth=0.6)
+        ax.set_xlabel('Distance [km]')
+        ax.set_ylabel('Vehicle speed [km/h]')
+
         print("\nCalculation of vmax done.")
 
     def calcTrackResistance(self, graph=False):
@@ -203,24 +213,58 @@ class Realizations:
                 self.avRealization.s, each.s)].reset_index(drop=True)
 
         if graph:
-            fig, ax = pyplot.subplots(2, 1)
+            fig, ax = pyplot.subplots(1, 2)
+            # fig = pyplot.figure()
+            # gs = GridSpec(2, 1, height_ratios=[3, 1])
+
+            # ax = []
+            # ax.append(fig.add_subplot(gs[0]))
+            # ax.append(fig.add_subplot(gs[1]))
+
             for each in self.condRealizations:
                 ax[0].plot(each.s, each.alt, c='#2ca02c', linewidth=0.2)
-            # ax[0].plot(self.avRealization.s,
-            #            self.avRealization.alt, c='g', label='Average altitude')
-            # ax[1].plot(self.avRealization.s,
-            #            self.avRealization.alt_filt, c='purple', label='Filtered altitude')
             ax[0].plot(self.avRealization.s,
-                       self.avRealization.alt_lin, c='#d62728', label='Linear approximation')
+                       self.avRealization.alt, c='purple', alpha=0.5, label='Average altitude')
+            ax[0].plot(self.avRealization.s,
+                       self.avRealization.alt_filt, c='purple', label='Filtered altitude')
+            ax[0].plot(self.avRealization.s,
+                       self.avRealization.alt_filt, c='#d62728', label='Linear approximation', linewidth=0.6)
             ax[1].plot(self.avRealization.s, self.avRealization.alt_grad,
                        c='#1f77b4', label='Track gradient')
-            ax[1].set_xlabel('Distance travelled [km]')
+            ax[1].yaxis.set_ticks([-20, -10, 0, 10, 20])
+            ax[0].set_xlabel('Distance [km]')
+            ax[1].set_xlabel('Distance [km]')
             ax[0].set_ylabel('Altitude [m]')
-            ax[1].set_ylabel('Track gradient [1/1000]')
+            ax[1].set_ylabel('Track gradient\n[1/1000]')
             # ax[2].set_ylabel('Track gradient')
             ax[0].legend()
-            ax[1].legend()
+            # ax[1].legend()
             # ax[2].legend()
+
+            # fig, ax = pyplot.subplots(1, 1)
+            # ax.plot(self.avRealization.s, self.avRealization.alt_grad,
+            #         c='#1f77b4', label='Track gradient')
+            # ax.set_xlabel('Distance travelled [km]')
+            # ax.set_ylabel('Track gradient [1/1000]')
+            x = [0, 4.6, 7.7, 20.6, 30.2, 35.8, 50.5, 58.7,
+                 66.3, 77.4, 87.4, 100.7, 105.7, 112.7, 125]
+
+            ref_grade = [0, 6.3, 3.6, 4.4, 4.7, 6.8,
+                         0.3, 1.7, 3.6, 5, 4, 4.3, 2.9, 2.4, 3.7]
+            max_grade = [0, 10.1, 5, 5.6, 6.5, 6.8,
+                         2.4, 2.4, 4.6, 5, 5, 4.8, 3.9, 3.2, 5]
+            ref_slope = [0, -7, -7, -5, -5, -8, -
+                         8, -3, -5, -5, -5, -5, -5, -5, -5]
+            max_slope = [0, -10, -10, -6.5, -6.5, -8, -8,
+                         -2.9, -5.6, -5.1, -5.1, -5.1, -5.1, -5.1, -5.1]
+            ax[1].step(x, ref_grade, c='#2ca02c',
+                       label='Reference inclination')
+            ax[1].step(x, max_grade, c='#d62728', label='Maximum inclination')
+            ax[1].step(x, ref_slope, '--', c='#2ca02c',
+                       label='Reference slope')
+            ax[1].step(x, max_slope, '--', c='#d62728', label='Maximum slope')
+            ax[1].legend()
+            pyplot.show()
 
         print("\nTrack resistance calculated.")
 
@@ -244,6 +288,4 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
-"""EOF"""
-"""EOF"""
 """EOF"""

@@ -6,6 +6,7 @@ Created on Sat Jun 26 20:10:23 2021
 @author: demust
 """
 
+from multiprocessing.connection import wait
 import sqlite3 as sql
 import folium
 import pandas as pd
@@ -42,7 +43,7 @@ destination_dir = "ToCopy/"
 name_tag = "_20220101"
 palette = pyplot.cm.tab10
 palette = palette(range(palette.N))
-pyplot.style.use('mplstyle.work')
+pyplot.style.use('mplstyle.presentation')
 
 """PATH"""
 
@@ -67,12 +68,12 @@ def main():
     # Model.staticGraph(graph_path)
     # Model.altitudeGraph(graph_path)
     # Model.speedGraph(graph_path)
-    # Model.accuracyGraph(graph_path)
+    Model.accuracyGraph(graph_path)
     # Model.mapGraph(graph_path)
     # Model.characteristicsGraph(graph_path)
     # Model.trackGraph(graph_path)
-    Model.vehGraph(graph_path)
-    Model.controlMatrixGraph(graph_path)
+    # Model.vehGraph(graph_path)
+    # Model.controlMatrixGraph(graph_path)
     # Model.copyFiles(graph_path, destination_path, name_tag)
 
 
@@ -397,7 +398,7 @@ class Realizations:
     def speedGraph(self, graphPath):
         """Plot speed."""
         colors = iter(palette)
-        fig, ax = pyplot.subplots(1, 1)
+        fig, ax = pyplot.subplots(3, 1, sharex=True)
         v_tresh = np.arange(60, 140, 10, )
         for each_idx, each in enumerate(self.rawRealizations):
             for i in range(len(v_tresh)-1):
@@ -405,45 +406,40 @@ class Realizations:
                                 & (each.v < v_tresh[i+1])].mean()
                 sigma_step = each.v[(each.v > v_tresh[i])
                                     & (each.v < v_tresh[i+1])].std()
-                print(
-                    f"{v_tresh[i]:5d}{v_tresh[i+1]:5d}{v_step:9.2f}{sigma_step:9.4f}\t\t{self.query.receiverType[each_idx]}")
 
-            ax.plot(
+            ax[each_idx].plot(
                 each.s,
                 each.v,
                 color=next(colors),
                 label=self.query.receiverType[each_idx],
             )
-            ax.legend(ncol=3)
-            ax.set(
+            ax[each_idx].legend(ncol=3)
+            ax[each_idx].set(
                 xlabel="s [km]",
                 ylabel="Speed [km/h]",
             )
-            pyplot.savefig(os.path.join(graphPath, "raw_speed.png"))
+        pyplot.savefig(os.path.join(graphPath, "raw_speed.png"))
 
         colors = iter(palette)
-        fig, ax = pyplot.subplots(1, 1)
+        fig, ax = pyplot.subplots(3, 1, sharex=True, figsize=(5, 4.5))
         for each_idx, each in enumerate(self.condRealizations):
             for i in range(len(v_tresh)-1):
                 v_step = each.v[(each.v > v_tresh[i])
                                 & (each.v < v_tresh[i+1])].mean()
                 sigma_step = each.v[(each.v > v_tresh[i])
                                     & (each.v < v_tresh[i+1])].std()
-                print(
-                    f"{v_tresh[i]:5d}{v_tresh[i+1]:5d}{v_step:9.2f}{sigma_step:9.4f}\t\t{self.query.receiverType[each_idx]}")
 
-            ax.plot(
+            ax[each_idx].plot(
                 each.s,
                 each.v,
                 color=next(colors),
                 label=self.query.receiverType[each_idx],
             )
-            ax.legend(ncol=3)
-            ax.set(
-                xlabel="s [km]",
-                ylabel="Speed [km/h]",
-            )
-            pyplot.savefig(os.path.join(graphPath, "cond_speed.png"))
+            ax[each_idx].legend(ncol=3)
+            ax[each_idx].set(ylabel="Speed [km/h]")
+            ax[each_idx].set_yticks([0, 40, 80, 120])
+        ax[-1].set(xlabel="s [km]")
+        pyplot.savefig(os.path.join(graphPath, "cond_speed.png"))
         print("Speed plotted.")
 
     def accuracyGraph(self, graphPath):
@@ -459,20 +455,19 @@ class Realizations:
                     xlabel="s [km]",
                 )
                 ax.legend(ncol=len(cols))
-            pyplot.savefig(os.path.join(
-                graphPath, f"raw_dop_{self.query.receiverType[each_idx]}.png"))
+        pyplot.savefig(os.path.join(
+            graphPath, f"raw_dop_{self.query.receiverType[each_idx]}.png"))
 
+        fig, ax = pyplot.subplots(3, 1, sharex=True, figsize=(5, 4.5))
         for each_idx, each in enumerate(self.condRealizations):
             colors = iter(palette)
-            fig, ax = pyplot.subplots(1, 1)
             for col_idx, col in enumerate(cols):
-                ax.plot(each.s, each[col], color=next(colors), label=col)
-                ax.set(
-                    xlabel="s [km]",
-                )
-                ax.legend(ncol=len(cols))
-            pyplot.savefig(os.path.join(
-                graphPath, f"cond_dop_{self.query.receiverType[each_idx]}.png"))
+                ax[each_idx].plot(each.s, each[col], color=next(colors), label=col)
+            ax[each_idx].set(ylabel=f"{self.query.receiverType[each_idx]}")
+        ax[0].legend(ncol=len(cols), loc='lower center', bbox_to_anchor=(0.5, 1.02))
+        ax[-1].set(xlabel="s [km]")
+        pyplot.savefig(os.path.join(
+            graphPath, f"cond_dop.png"))
 
         print("xDOP plotted.")
 
@@ -487,6 +482,7 @@ class Realizations:
         longitude /= length
 
         colors = iter([mpl_color.rgb2hex(each) for each in palette])
+
         myMap = folium.Map(
             location=[latitude, longitude], tiles="CartoDB positron")
         for track_idx, track in enumerate(self.rawRealizations):
@@ -777,8 +773,8 @@ class Realizations:
             for (j, i), label in np.ndenumerate(each[1]):
                 if label != 0:
                     ax[idx].text(i, j, f"{label:1.3f}",
-                                 ha='center', va='center')
-            ax[idx].set_title(f"Control matrix for {each[0]}")
+                                 ha='center', va='center', fontsize=3)
+            ax[idx].set_title(f"Transition matrix - {each[0]}")
         pyplot.savefig(
             os.path.join(
                 graphPath, "control_matrix.png")
@@ -791,25 +787,26 @@ class Realizations:
         gs = fig.add_gridspec(1, len(control))
         for ctrlIdx, ctrl in enumerate(control):
             gsub = gs[ctrlIdx].subgridspec(N, N)
-            ax = gsub.subplots()
+            ax = gsub.subplots(sharex='col', sharey='row')
             ax = ax.flat
+
             for idx, each in enumerate(self.controlDurationSum[ctrl]):
                 if each.size > 1:
-                    ax[idx].hist(each, bins=20, density=True)
+                    ax[idx].hist(each, bins=20, density=False)
                     params = ss.expon.fit(each)
                     print(
                         f"\tExponential distribution fitted - {ctrl} - {idx}: {params[0]:1.3f}\t\t{params[1]:1.3f}")
                     rx = np.linspace(min(each), max(each), 100)
                     rp = ss.expon.pdf(rx, *params)
                     ax[idx].plot(rx, rp)
-                    ax[idx].text(0.9, 0.9, f"λ = {params[1]:1.3f}",
-                                 size=12, transform=ax[idx].transAxes, ha='right', va='top')
+                    ax[idx].text(0.9, 0.9, f"{ctrl} - {idx} \n λ = {params[1]:1.3f}",
+                                 size=10, transform=ax[idx].transAxes, ha='right', va='top')
                     ax[idx].set_xlim(left=0)
                     ax[idx].set_xlabel("t[s]", loc='right')
                 else:
                     print(
                         f"\tExponential distribution not fitted - {ctrl} - {idx}.")
-                ax[idx].title.set_text(f"{ctrl} - {idx}")
+                # ax[idx].title.set_text(f"{ctrl} - {idx}")
         pyplot.savefig(
             os.path.join(
                 graphPath, "control_duration.png")

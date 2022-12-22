@@ -1,0 +1,92 @@
+Article/Literature/albrecht2013.pdf
+Article/Literature/AlshamsiH_2016_RealTimeVehicleTrackingUsingArduinoMega.pdf
+Article/Literature/CostanzoA_2013_AnArduinoBasedSystemProvidedWithGPSGPRSShieldForRealTimeMonitoringOfTrafficFlows.pdf
+Article/Literature/Digital-filtering-of-railway-track-coordinates-in-mobile-multireceiver-gnss-measurementsSensors-Switzerland.pdf
+Article/Literature/file.pdf
+Article/Literature/HlaingNNS_2019_GPSandGSMBasedVehicleTrackingSystem.pdf
+Article/Literature/JuneMMK_2018_RealTimeVehicleTrackingSystemUsingArduinoGPSGSMAndWebBasedTechnologies.pdf
+Article/Literature/MolooRK_2011_LowCostMobileGPSTrackingSolution.pdf
+Article/Literature/PhamHD_2013_DevelopmentOfVehicleTrackingSystemUsingGPSAndGSMModem.pdf
+Article/Literature/RahmanM_2016_RealTimeGoogleMapAndArduinoBasedVehicleTrackingSystem.pdf
+Article/Literature/SalmiP_2009_InventionsUtilizingSatelliteNavigationSystems.pdf
+Article/Literature/SamuelPJ_2016_DigitizationOfSpeedometerIncorporatingArduinoAndTracingOfLocationUsingGPSInRailways.pdf
+Article/Literature/spinsante2020.pdf
+Article/Literature/Testing-the-positioning-accuracy-of-GNSS-solutions-during-the-tramway-track-mobile-satellite-measurements-in-diverse-Urban-signal-reception-conditionsEnergies.pdf
+Article/Literature/Vehicle-tracker-system-design-based-on-GSM-and-GPS-interface-using-arduino-as-platformIndonesian-Journal-of-Electrical-Engineering-and-Computer-Science.pdf
+Article/Literature/Verification-of-gnss-measurements-of-the-railway-track-using-standard-techniques-for-determining-coordinatesRemote-Sensing.pdf
+Article/Literature/Scopus/MoralloNT_2021_VehicleTrackerSystemDesignBasedOnGSMAndGPSInterfaceUsingArduinoAsPlatform.pdf
+Article/Literature/Scopus/RajkumarRI_2013_GPSAndEthernetBasedRealTimeTrainTrackingSystem.pdf
+Article/Literature/Scopus/RothM_2020_AnOpenDataSetForRailVehiclePositioningExperiments.pdf
+Article/Literature/Scopus/SpechtC_2020_VerificationOfGNSSMeasurementsOfTheRailwayTrackUsingStandardTechniquesForDeterminingCoordinates.pdf
+Article/Literature/Scopus/SpechtM_2020_TestingThePositioningAccuracyOfGNSSSolutionsDuringTheTramwayTrackMobileSatelliteMeasurementsInDiverseUrbanSignalReceptionConditions.pdf
+Article/Literature/Scopus/WilkA_2020_DigitalFilteringOfRailwayTrackCoordinatesInMobileMultireceiverGNSSMeasurements.pdf
+Article/Summary/Summaries.pdf
+Article/Summary/Summaries.tex
+GNSS track data/__pycache__/decorators.cpython-38.pyc
+GNSS track data/.vscode/launch.json
+GNSS track data/Results/Dynamic/avRealization.db
+GNSS track data/Results/Dynamic/condRealizations.db
+GNSS track data/Results/Dynamic/query.db
+GNSS track data/Results/Dynamic/rawRealizations.db
+GNSS track data/Results/Dynamic/sumRealization.db
+GNSS track data/Results/Dynamic/Graphs/map_cond.html
+GNSS track data/Results/Dynamic/Graphs/map_raw.html
+GNSS track data/Results/Dynamic2/avRealization.db
+GNSS track data/Results/Dynamic2/condRealizations.db
+GNSS track data/Results/Dynamic2/query.db
+GNSS track data/Results/Dynamic2/rawRealizations.db
+GNSS track data/Results/Dynamic2/sumRealization.db
+GNSS track data/Results/Dynamic2/Graphs/cond_alt.png
+GNSS track data/Results/Dynamic2/Graphs/cond_dop_IPhone 11 Pro.png
+GNSS track data/Results/Dynamic2/Graphs/cond_dop_MTK 3339.png
+GNSS track data/Results/Dynamic2/Graphs/cond_dop_U-blox M8N.png
+GNSS track data/Results/Dynamic2/Graphs/cond_speed.png
+GNSS track data/Results/Dynamic2/Graphs/raw_alt.png
+GNSS track data/Results/Dynamic2/Graphs/raw_dop_IPhone 11 Pro.png
+GNSS track data/Results/Dynamic2/Graphs/raw_dop_MTK 3339.png
+GNSS track data/Results/Dynamic2/Graphs/raw_dop_U-blox M8N.png
+GNSS track data/Results/Dynamic2/Graphs/raw_speed.png
+GNSS track data/Results/Route/avRealization.db
+GNSS track data/Results/Route/condRealizations.db
+GNSS track data/Results/Route/query.db
+GNSS track data/Results/Route/rawRealizations.db
+GNSS track data/Results/Route/sumRealization.db
+GNSS track data/Results/Route/Graphs/map_raw.html
+GNSS track data/Results/Static/avRealization.db
+GNSS track data/Results/Static/condRealizations.db
+GNSS track data/Results/Static/ipython.html
+GNSS track data/Results/Static/query.db
+GNSS track data/Results/Static/rawRealizations.db
+GNSS track data/Results/Static/sumRealization.db
+GNSS track data/Results/Test/avRealization.db
+GNSS track data/Results/Test/condRealizations.db
+GNSS track data/Results/Test/controlMatrices.npz
+GNSS track data/Results/Test/query.db
+GNSS track data/Results/Test/rawRealizations.db
+GNSS track data/Results/Test/sumRealization.db
+GNSS track data/Results/Test/Graphs/cond_alt.png
+GNSS track data/Results/Test/Graphs/cond_dop.png
+GNSS track data/Results/Test/Graphs/cond_speed.png
+GNSS track data/Results/Test/Graphs/map_cond.html
+GNSS track data/Results/Test/Graphs/map_raw.html
+GNSS track data/Results/Test/Graphs/raw_alt.png
+GNSS track data/Results/Test/Graphs/raw_dop_IPhone 11 Pro.png
+GNSS track data/Results/Test/Graphs/raw_speed.png
+GNSS track data/ToCopy/cond_alt.png
+GNSS track data/ToCopy/cond_dop_IPhone 11 Pro.png
+GNSS track data/ToCopy/cond_dop_MTK 3339.png
+GNSS track data/ToCopy/cond_dop_U-blox M8N.png
+GNSS track data/ToCopy/cond_speed.png
+GNSS track data/ToCopy/control_duration_20220101.png
+GNSS track data/ToCopy/control_matrix_20220101.png
+GNSS track data/ToCopy/F_v_distribution_20220101.png
+GNSS track data/ToCopy/raw_alt.png
+GNSS track data/ToCopy/raw_dop_IPhone 11 Pro.png
+GNSS track data/ToCopy/raw_dop_MTK 3339.png
+GNSS track data/ToCopy/raw_dop_U-blox M8N.png
+GNSS track data/ToCopy/raw_speed.png
+GNSS track data/ToCopy/route_characteristics_20220101.html
+GNSS track data/ToCopy/track_data_20220101.html
+GNSS track data/ToCopy/veh_data_20220101.html
+GNSS track data/Database/GNSS recordings.db
+GNSS track data/test.xls

@@ -34,15 +34,25 @@ sql_query = """SELECT *
     WHERE recType = 'route'
     AND fromStation = 'Keleti'
     AND toStation = 'Füzesabony'
+    AND dateTime = '2022/01/22 18:00:07'
     AND trainType = 'IR'
     AND (trainConfig = 'FLIRT' OR trainConfig = 'FLIRT+FLIRT')
-    AND receiverType = 'U-blox M8N'
     """
 
 """SELECT *
     FROM listOfRecordings
     WHERE recType = 'static'
     AND dateTime = '2022/01/31 15:40:42'
+    """
+
+"""SELECT *
+    FROM listOfRecordings
+    WHERE recType = 'route'
+    AND fromStation = 'Keleti'
+    AND toStation = 'Füzesabony'
+    AND dateTime = '2022/01/22 18:00:07'
+    AND trainType = 'IR'
+    AND (trainConfig = 'FLIRT' OR trainConfig = 'FLIRT+FLIRT')
     """
 
 """SELECT *
@@ -66,7 +76,7 @@ sql_query = """SELECT *
     AND receiverType = ''
     """
 
-pyplot.style.use('mplstyle.article')
+pyplot.style.use('mplstyle.presentation')
 np.set_printoptions(precision=3)
 
 """PATH"""
@@ -192,17 +202,48 @@ class Realizations:
 
         if graph:
             fig, ax = pyplot.subplots(2, 2)
-            ax[0, 0].plot(self.rawRealizations[0].s,
-                          self.rawRealizations[0].alt)
-            ax[0, 1].plot(self.condRealizations[0].s,
-                          self.condRealizations[0].alt)
-            ax[1, 0].plot(self.rawRealizations[0].s, self.rawRealizations[0].v)
-            ax[1, 1].plot(self.condRealizations[0].s,
-                          self.condRealizations[0].v)
+            N = 2
+            ax[0, 0].plot(self.rawRealizations[N].s,
+                          self.rawRealizations[N].alt)
+            ax[0, 1].plot(self.condRealizations[N].s,
+                          self.condRealizations[N].alt)
+            ax[1, 0].plot(self.rawRealizations[N].s, self.rawRealizations[N].v)
+            ax[1, 1].plot(self.condRealizations[N].s,
+                          self.condRealizations[N].v)
             ax[0, 0].set_ylabel('Altitude [m]')
-            ax[1, 0].set_xlabel('Distance travelled [km]')
+            ax[1, 0].set_xlabel('Distance [km]')
             ax[1, 0].set_ylabel('Vehicle speed [km/h]')
-            ax[1, 1].set_xlabel('Distance travelled [km]')
+            ax[1, 1].set_xlabel('Distance [km]')
+
+        # if graph:
+        #     from matplotlib import colors as mpl_color
+        #     palette = pyplot.cm.tab10
+        #     palette = palette(range(palette.N))
+        #     colors = iter([mpl_color.rgb2hex(each) for each in palette])
+        #     for each in self.rawRealizations:
+        #         col = next(colors)
+        #         fig, ax = pyplot.subplots(2, 1)
+        #         ax[0].plot(each.s, each.alt, c=col)
+        #         ax[1].plot(each.s, each.v, c=col)
+        #         ax[0].set_ylabel('Magasság [m]')
+        #         ax[1].set_ylabel('Sebesség [km/h]')
+        #         ax[1].set_xlabel('Megtett út [km]')
+
+        # if graph:
+        #     palette = pyplot.cm.tab10
+        #     palette = palette(range(palette.N))
+        #     colors = iter([mpl_color.rgb2hex(each) for each in palette])
+        #     for each in self.rawRealizations:
+        #         colors = iter([mpl_color.rgb2hex(each) for each in palette])
+        #         fig, ax = pyplot.subplots(2, 1)
+        #         ax[0].plot(each.s, each.nSAT, c=next(colors))
+        #         ax[1].plot(each.s, each.hdop, c=next(colors), label='HDoP')
+        #         ax[1].plot(each.s, each.vdop, c=next(colors), label='VDoP')
+        #         ax[1].plot(each.s, each.pdop, c=next(colors), label='PDoP')
+        #         ax[0].set_ylabel('Műholdak száma [db]')
+        #         ax[1].set_ylabel('Pozíció hígulás [-]')
+        #         ax[1].set_xlabel('Megtett út [km]')
+        #         ax[1].legend()
 
         print("\nData conditioning performed.\n")
 

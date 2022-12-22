@@ -1,0 +1,12 @@
+figure.dpi:         800
+figure.figsize:     4, 4
+figure.autolayout:  False
+axes.grid:          False
+lines.linewidth:    0.4
+legend.loc:         best
+font.family:        serif
+font.size:          11
+axes.labelsize:     11
+legend.fontsize:    11
+xtick.labelsize:    11
+ytick.labelsize:    11

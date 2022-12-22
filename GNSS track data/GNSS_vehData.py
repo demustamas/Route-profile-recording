@@ -25,7 +25,7 @@ destination_dir = "ToCopy/"
 name_tag = ""
 palette = pyplot.cm.tab10
 palette = palette(range(palette.N))
-pyplot.style.use('mplstyle.article')
+pyplot.style.use('mplstyle.presentation')
 
 """PATH"""
 
@@ -149,16 +149,9 @@ class Realizations:
                             103, 94, 86, 79, 73, 68, 64, 60], dtype='float')
         M = 100
         v = np.linspace(min(v_input), max(v_input), M)
-        F = np.zeros(M)
 
-        f = interp1d(v_input, F_input, kind='cubic')
+        f = interp1d(v_input, F_input, kind='linear')
         F = f(v)
-
-        # for i in range(len(v_input)-1):
-        #     xp = [v_input[i], v_input[i+1]]
-        #     fp = [F_input[i], F_input[i+1]]
-        #     F[np.where(np.logical_and(v >= v_input[i], v < v_input[i+1]))
-        #       ] = np.interp(v[np.where(np.logical_and(v >= v_input[i], v < v_input[i+1]))], xp, fp)
 
         F *= 1000
 
@@ -187,7 +180,6 @@ class Realizations:
                                                   for x in range(N)]
 
             control_func = np.zeros(len(each))
-# a gond valahol ebben a for-ban van -> negatív sebességet nem tud osztályozni + még valami gond van ezen felül
             for i in range(len(v)-1):
                 for j in range(2*N-1):
                     control_func[each.v.between(
@@ -236,6 +228,101 @@ class Realizations:
                     self.controlMatrixSumNorm[ctrl][i] = self.controlMatrixSum[ctrl][i] / \
                         self.controlMatrixSum[ctrl][i].sum()
 
+        if graph:
+            # fig, ax = pyplot.subplots(3, 1, figsize=(4, 4))
+            # ax[0].plot(self.condRealizations[0].s,
+            #            self.condRealizations[0].F_traction / 1000)
+            # ax[1].plot(self.condRealizations[0].s,
+            #            self.condRealizations[0].v, c='#2ca02c')
+            # ax[2].plot(self.condRealizations[0].s,
+            #            self.condRealizations[0].control, c='#d62728')
+            # ax[2].set_xlabel('Distance travelled [km]')
+            # ax[0].set_ylabel('Traction / Braking force [kN]')
+            # ax[1].set_ylabel('Vehicle speed [km/h]')
+            # ax[2].set_ylabel('Control position')
+
+            fig, ax = pyplot.subplots(3, 1)
+            N = 2
+            ax[0].plot(self.condRealizations[N].s,
+                       self.condRealizations[N].F_traction / 1000)
+            F_min = np.zeros(len(self.condRealizations[N].s))
+            for i in range(len(v)-1):
+                F_min[self.condRealizations[N].v.between(
+                    v[i], v[i+1])] = steps[i][N] / 1000
+            ax[0].plot(self.condRealizations[N].s, -F_min, '--',
+                       c='#d62728', label='Maximum traction force')
+            ax[0].plot(self.condRealizations[N].s, F_min, '--',
+                       c='#d62728', label='Maximum brake force')
+            ax[1].plot(self.condRealizations[N].s,
+                       self.condRealizations[N].v, c='#2ca02c')
+            ax[2].plot(self.condRealizations[N].s,
+                       self.condRealizations[N].control, c='#d62728')
+            ax[2].set_xlabel('Distance [km]')
+            ax[0].set_ylabel('Traction / Brake force [kN]')
+            ax[1].set_ylabel('Vehicle speed [km/h]')
+            ax[2].set_ylabel('Control position')
+            ax[0].set_yticks([-160, -80, 0, 80, 160])
+            ax[1].set_yticks([0, 40, 80, 120])
+            ax[2].set_yticks([-8, -4, 0, 4, 8])
+
+            fig = pyplot.figure()
+            ax_3d = fig.add_subplot(111, projection='3d')
+            data = pd.concat(self.condRealizations, ignore_index=True)
+            data.F_traction /= 1000
+
+            N_bin = 120
+            H, xedges, yedges = np.histogram2d(
+                data.v, data.F_traction, bins=N_bin, density=False)
+            xpos, ypos = np.meshgrid(xedges[:-1], yedges[:-1], indexing='ij')
+            xpos = xpos.ravel()
+            ypos = ypos.ravel()
+            zpos = np.zeros(N_bin ** 2)
+
+            dx = np.ones(N_bin ** 2) * (np.ptp(xedges)) / N_bin
+            dy = np.ones(N_bin ** 2) * (np.ptp(yedges)) / N_bin
+            dz = H.ravel()
+
+            dc = pyplot.cm.Blues((dz / dz.max()) ** (1/5))
+
+            ax_3d.bar3d(xpos, ypos, zpos, dx, dy, dz, color=dc)
+            ax_3d.set_xlabel('v [km/h]')
+            ax_3d.set_ylabel('Traction / Brake force [kN]')
+            ax_3d.set_zlabel('Frequency')
+
+            fig, ax = pyplot.subplots(2, 1)
+            ax[0].hist(data.F_traction, bins=N_bin, density=True)
+            ax_0 = ax[0].twinx()
+            ax_0.hist(data.F_traction, bins=N_bin, density=True,
+                      cumulative=True, histtype='step', color='#d62728')
+            ax[1].hist(data.v, bins=N_bin, density=True)
+            ax_1 = ax[1].twinx()
+            ax_1.hist(data.v, bins=N_bin, density=True,
+                      cumulative=True, histtype='step', color='#d62728')
+            # fig = pyplot.figure()
+            # D = 4
+            # gs = fig.add_gridspec(D, 2*D)
+            # ax = fig.add_subplot(gs[1:, D:-1])
+            # ax_F = fig.add_subplot(gs[1:, -1], sharey=ax)
+            # ax_v = fig.add_subplot(gs[0, D:-1], sharex=ax)
+            # ax_Fc = ax_F.twiny()
+            # ax_vc = ax_v.twinx()
+
+            # ax.scatter(data.v, data.F_traction, marker=".",
+            #            linewidth=0.1, edgecolors="none", alpha=0.5)
+            # ax.set_xlabel('v [km/h]', loc='right')
+            # ax.set_ylabel('Traction / Brake force [kN]')
+            # ax_F.hist(data.F_traction, bins=N_bin,
+            #           orientation='horizontal',  density=True)
+            # ax_Fc.hist(data.F_traction, bins=N_bin, orientation='horizontal',
+            #            density=True, cumulative=True, histtype='step')
+            # ax_F.yaxis.set_tick_params(left=False, labelleft=False)
+            # ax_Fc.tick_params('x')
+            # ax_v.hist(data.v, bins=N_bin,  density=True)
+            # ax_v.xaxis.set_tick_params(bottom=False, labelbottom=False)
+            # ax_vc.hist(data.v, bins=N_bin,
+            #            density=True, cumulative=True, histtype='step')
+            # ax_vc.tick_params('y')
+
         print("\nControl matrices generated.")
 
     def saveToDatabase(self, wdir):
@@ -278,5 +365,4 @@ class Realizations:
 """Calling simulation model to calculate."""
 Model = Realizations()
 main()
-"""EOF"""
 """EOF"""
